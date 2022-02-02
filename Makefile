@@ -1,5 +1,5 @@
-# include variables from .envrc file
-include .envrc
+# include variables from .env file
+include .env
 
 #========================================================================================================#
 # HELPERS
