@@ -1,5 +1,24 @@
 package data
 
+import (
+	"context"
+	"database/sql"
+	"database/sql/driver"
+	"encoding/json"
+	"errors"
+	"time"
+)
+
+type CountryModel struct {
+	DB *sql.DB
+}
+
+type Item struct {
+	ID      int
+	Version int32
+	Country Country
+}
+
 type Country struct {
 	Name         name                   `json:"name"`
 	Tld          []string               `json:"tld,omitempty"`
@@ -86,4 +105,141 @@ type capitalInfo struct {
 type postalCode struct {
 	Format string `json:"format,omitempty"`
 	Regex  string `json:"regex,omitempty"`
+}
+
+func (c Country) Value() (driver.Value, error) {
+	return json.Marshal(c)
+}
+
+func (c *Country) Scan(value interface{}) error {
+	b, ok := value.([]byte)
+	if !ok {
+		return errors.New("type assertion to []byte failed")
+	}
+
+	return json.Unmarshal(b, &c)
+}
+
+func (c *CountryModel) Insert(item *Item) error {
+	query := `
+			INSERT INTO countries(country) 
+			VALUES($1)
+			RETURNING id, version
+			`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	return c.DB.QueryRowContext(ctx, query, item.Country).Scan(&item.ID, &item.Version)
+}
+
+func (c *CountryModel) GetAll(filters Filters) ([]*Country, Metadata, error) {
+	query := `
+			SELECT COUNT(*) OVER(), country 
+			FROM countries
+			LIMIT $1 OFFSET $2`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	rows, err := c.DB.QueryContext(ctx, query, filters.limit(), filters.offset())
+	if err != nil {
+		return nil, Metadata{}, err
+	}
+
+	defer rows.Close()
+
+	totalRecords := 0
+	countries := []*Country{}
+
+	for rows.Next() {
+		var country Country
+
+		err := rows.Scan(
+			&totalRecords,
+			&country,
+		)
+		if err != nil {
+			return nil, Metadata{}, err
+		}
+
+		countries = append(countries, &country)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, Metadata{}, err
+	}
+
+	metadata := calculateMetadata(totalRecords, filters.Page, filters.PageSize)
+
+	return countries, metadata, nil
+}
+
+func (c *CountryModel) GetByName(name string) ([]*Country, error) {
+	query := `
+		SELECT country FROM countries
+		WHERE (to_tsvector('simple', country->'name') @@ plainto_tsquery('simple', $1))
+		ORDER BY country->'name'->'official'
+	`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	rows, err := c.DB.QueryContext(ctx, query, name)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	countries := []*Country{}
+
+	for rows.Next() {
+		var country Country
+
+		err := rows.Scan(&country)
+		if err != nil {
+			return nil, err
+		}
+
+		countries = append(countries, &country)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	if len(countries) == 0 {
+		return nil, ErrRecordNotFound
+	}
+
+	return countries, nil
+
+}
+
+func (c CountryModel) GetByCode(code string) (*Country, error) {
+	query := `
+		SELECT country FROM countries
+		WHERE country->'cca2' ? $1
+		or country->'ccn3' ? $1
+		or country->'cca3' ? $1
+		or country->'cioc' ? $1
+	`
+
+	var country Country
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	err := c.DB.QueryRowContext(ctx, query, code).Scan(&country)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, ErrRecordNotFound
+		default:
+			return nil, err
+		}
+	}
+
+	return &country, nil
 }
