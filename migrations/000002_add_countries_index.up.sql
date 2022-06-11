@@ -1,0 +1,1 @@
+CREATE INDEX IF NOT EXISTS idx_countries_country ON countries USING gin (country);

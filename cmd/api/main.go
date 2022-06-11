@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"flag"
+	"fmt"
 	"os"
 	"sync"
 	"time"
@@ -12,6 +13,12 @@ import (
 	"github.com/Nana-Seyram/crest-countries/internal/jsonlog"
 
 	_ "github.com/lib/pq"
+)
+
+var (
+	buildTime string
+	version   string
+	goVersion string
 )
 
 type config struct {
@@ -38,12 +45,21 @@ func main() {
 	flag.IntVar(&cfg.port, "port", 4000, "server port")
 	flag.StringVar(&cfg.env, "env", "development", "Environment ( development | staging | production )")
 
-	flag.StringVar(&cfg.db.dsn, "db-dsn", "postgres://crest:magafium..@localhost/crest_countries", "database dsn")
+	flag.StringVar(&cfg.db.dsn, "db-dsn", "", "database dsn")
 	flag.IntVar(&cfg.db.maxOpenConns, "db-max-open-conns", 25, "Postgresql maximum open connections")
 	flag.IntVar(&cfg.db.maxIdleConns, "db-max-idle-conns", 25, "Postgresql maximum idle connections")
 	flag.StringVar(&cfg.db.maxIdleTime, "db-max-idle-time", "15m", "Postgresql maximum idle time")
 
+	displayVersion := flag.Bool("version", false, "Display version and exit")
+
 	flag.Parse()
+
+	if *displayVersion {
+		fmt.Printf("Version:\t%s\n", version)
+		fmt.Printf("Build time:\t%s\n", buildTime)
+		fmt.Printf("Go Version:\t%s\n", goVersion)
+		os.Exit(0)
+	}
 
 	logger := jsonlog.New(os.Stdout, jsonlog.LevelInfo)
 
