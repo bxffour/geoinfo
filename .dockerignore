@@ -1,0 +1,4 @@
+remote/
+bin/
+migrations/
+Makefile
