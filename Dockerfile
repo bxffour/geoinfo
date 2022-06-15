@@ -15,6 +15,6 @@ RUN go build -o /go/bin/crest-app ./cmd/api
 ## DEPLOY
 ##
 FROM alpine:3.15.4
-COPY --from=build-env /go/bin/crest-app /
+COPY --from=build-env /go/bin/crest-app /usr/local/bin/
 EXPOSE 8080
 CMD [ "crest-app" ]
