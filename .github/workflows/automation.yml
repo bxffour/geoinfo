@@ -36,10 +36,10 @@ jobs:
           file: ./Dockerfile
           builder: ${{ steps.buildx.outputs.name }}
           push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/crest-countries:latest,${{ secrets.DOCKER_USERNAME }}/crest-countries:0.0-${{ github.run_number }}
+          tags: ${{ secrets.DOCKER_USERNAME }}/crest-countries:latest, ${{ secrets.DOCKER_USERNAME }}/crest-countries:v0.0.${{ github.run_number }}
           cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/crest-countries:buildcache
           cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/crest-countries:buildcache,mode=max
-          
+
   release-nightly:
     if: ${{ github.ref_name == 'develop' }}
     needs: build-setup
@@ -53,6 +53,6 @@ jobs:
           file: ./Dockerfile
           builder: ${{ steps.buildx.outputs.name }}
           push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/crest-countries:latest-nightly,${{ secrets.DOCKER_USERNAME }}/crest-countries:0.0-${{ github.run_number }}-nightly
+          tags: ${{ secrets.DOCKER_USERNAME }}/crest-countries:nightly, ${{ secrets.DOCKER_USERNAME }}/crest-countries:0.${{ github.run_number }}.nightly
           cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/crest-countries:buildcache
           cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/crest-countries:buildcache,mode=max
