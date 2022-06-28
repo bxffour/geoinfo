@@ -11,6 +11,7 @@ import (
 
 	"github.com/Nana-Seyram/crest-countries/internal/data"
 	"github.com/Nana-Seyram/crest-countries/internal/jsonlog"
+	"github.com/joho/godotenv"
 
 	_ "github.com/lib/pq"
 )
@@ -41,11 +42,12 @@ type application struct {
 
 func main() {
 	var cfg config
+	var dsn string
 
-	flag.IntVar(&cfg.port, "port", 4000, "server port")
+	flag.IntVar(&cfg.port, "port", 8080, "server port")
 	flag.StringVar(&cfg.env, "env", "development", "Environment ( development | staging | production )")
 
-	flag.StringVar(&cfg.db.dsn, "db-dsn", "", "database dsn")
+	flag.StringVar(&dsn, "dsn-path", "/etc/crest/.env", "path to .env file containing database connection string")
 	flag.IntVar(&cfg.db.maxOpenConns, "db-max-open-conns", 25, "Postgresql maximum open connections")
 	flag.IntVar(&cfg.db.maxIdleConns, "db-max-idle-conns", 25, "Postgresql maximum idle connections")
 	flag.StringVar(&cfg.db.maxIdleTime, "db-max-idle-time", "15m", "Postgresql maximum idle time")
@@ -62,6 +64,11 @@ func main() {
 	}
 
 	logger := jsonlog.New(os.Stdout, jsonlog.LevelInfo)
+
+	err := cfg.loadEnv(dsn)
+	if err != nil {
+		logger.PrintFatal(err, nil)
+	}
 
 	db, err := openDB(cfg)
 	if err != nil {
@@ -106,4 +113,16 @@ func openDB(cfg config) (*sql.DB, error) {
 	}
 
 	return db, nil
+}
+
+func (c *config) loadEnv(path string) error {
+	err := godotenv.Load(path)
+	if err != nil {
+		return err
+	}
+
+	conn_string := os.Getenv("CRESTCOUNTRIES_DB_DSN")
+	c.db.dsn = conn_string
+
+	return nil
 }

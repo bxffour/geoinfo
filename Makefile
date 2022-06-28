@@ -39,12 +39,12 @@ build/api:
 #=========================================================================================================#
 
 .PHONY: run/api/binary
-run/api/binary:
+launch/api/binary:
 	@./bin/api -db-dsn=${CRESTCOUNTRIES_DB_DSN}
 
 ## run/api: run the cmd/api application
 .PHONY: run/api
-run/api:
+launch/api:
 	@go run cmd/api/* -db-dsn=${CRESTCOUNTRIES_DB_DSN}
 
 ## db/psql: connect to the database using psql

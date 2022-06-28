@@ -2,3 +2,4 @@ remote/
 bin/
 migrations/
 Makefile
+deployments/
