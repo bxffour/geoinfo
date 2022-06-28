@@ -10,27 +10,30 @@ import (
 )
 
 func (app *application) createCountryHandler(w http.ResponseWriter, r *http.Request) {
-	var country data.Country
+	var countries []data.Country
 
-	err := app.readJSON(w, r, &country)
+	err := app.readJSON(w, r, &countries)
 	if err != nil {
 		app.badRequestResponse(w, r, err)
 		return
 	}
 
-	item := &data.Item{
-		Country: country,
-	}
+	for _, country := range countries {
 
-	err = app.models.Countries.Insert(item)
-	if err != nil {
-		app.serverErrorResponse(w, r, err)
-		return
-	}
+		item := &data.Item{
+			Country: country,
+		}
 
-	err = app.writeJSON(w, http.StatusCreated, envelope{"message": "operation was successful"}, nil)
-	if err != nil {
-		app.serverErrorResponse(w, r, err)
+		err = app.models.Countries.Insert(item)
+		if err != nil {
+			app.serverErrorResponse(w, r, err)
+			return
+		}
+
+		err = app.writeJSON(w, http.StatusCreated, envelope{"message": "operation was successful"}, nil)
+		if err != nil {
+			app.serverErrorResponse(w, r, err)
+		}
 	}
 }
 
