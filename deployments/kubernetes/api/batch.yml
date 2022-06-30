@@ -1,0 +1,48 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: setup-linode-pg
+spec:
+  template:
+    spec:
+      containers:
+      - name: setup-job-ctr
+        image: sxntana/pg-setup-utility:0.1.2 
+        env:
+        - name: POSTGRES_HOSTNAME
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secrets
+              key: POSTGRES_HOSTNAME
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secrets
+              key: POSTGRES_USER
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secrets
+              key: POSTGRES_PASSWORD
+        - name: POSTGRES_ROLE
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secrets
+              key: POSTGRES_ROLE
+        - name: POSTGRES_ROLE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secrets
+              key: POSTGRES_ROLE_PASSWORD
+        - name: POSTGRES_NEW_DB
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secrets
+              key: POSTGRES_NEW_DB
+        - name: POSTGRES_DB
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secrets
+              key: POSTGRES_DB
+      restartPolicy: Never
+      

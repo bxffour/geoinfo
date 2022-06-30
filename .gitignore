@@ -13,7 +13,11 @@
 *.tfstate*
 *.lock.hcl
 .terraform/
+Docker/
+postgres/
+dump/
 config.sh
+secrets.sh
 
 # Test binary, built with `go test -c`
 *.test
