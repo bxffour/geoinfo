@@ -167,8 +167,13 @@ func (c *CountryModel) GetAll(filters Filters) ([]*Country, Metadata, error) {
 func (c *CountryModel) GetByName(name string, filers Filters) ([]*Country, Metadata, error) {
 	query := `
 		SELECT COUNT(*) OVER(), country FROM countries c
-		CROSS JOIN LATERAL jsonb_each(c.country -> 'name') as j(key, value)
-		WHERE j.key = 'common' AND j.value::text ILIKE '%' || $1 || '%'
+		WHERE EXISTS (
+			SELECT 1 FROM jsonb_each(country -> 'name') as j(key, value)
+			WHERE j.value::text ILIKE '%' || $1 || '%'
+			UNION
+			SELECT 1 FROM jsonb_each(country -> 'name' -> 'nativeName') as n(key, value)
+			WHERE n.value::text ILIKE '%' || $1 || '%'
+		)
 		LIMIT $2 OFFSET $3
 	`
 

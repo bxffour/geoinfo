@@ -5,7 +5,7 @@
 *.so
 *.dylib
 *.txt
-*.json
+# *.json
 .env
 
 # custom
