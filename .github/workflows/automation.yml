@@ -6,7 +6,7 @@ on:
       - 'develop'
 jobs:
   release:
-    if: ${{ github.ref_name == 'refs/heads/main' }}
+    if: ${{ github.ref_name == 'main' && github.event_name == 'push'}}
     runs-on: ubuntu-latest
     steps:
       -
