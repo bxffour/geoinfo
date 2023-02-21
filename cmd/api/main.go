@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"database/sql"
-	"expvar"
 	"flag"
 	"fmt"
 	"os"
