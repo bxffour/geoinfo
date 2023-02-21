@@ -6,6 +6,8 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"errors"
+	"log"
+	"strings"
 	"time"
 )
 
@@ -120,19 +122,6 @@ func (c *Country) Scan(value interface{}) error {
 	return json.Unmarshal(b, &c)
 }
 
-func (c *CountryModel) Insert(item *Item) error {
-	query := `
-			INSERT INTO countries(country) 
-			VALUES($1)
-			RETURNING id, version
-			`
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	return c.DB.QueryRowContext(ctx, query, item.Country).Scan(&item.ID, &item.Version)
-}
-
 func (c *CountryModel) GetAll(filters Filters) ([]*Country, Metadata, error) {
 	query := `
 			SELECT COUNT(*) OVER(), country 
@@ -175,46 +164,18 @@ func (c *CountryModel) GetAll(filters Filters) ([]*Country, Metadata, error) {
 	return countries, metadata, nil
 }
 
-func (c *CountryModel) GetByName(name string) ([]*Country, error) {
+func (c *CountryModel) GetByName(name string, filers Filters) ([]*Country, Metadata, error) {
 	query := `
-		SELECT country FROM countries
-		WHERE (to_tsvector('simple', country->'name') @@ plainto_tsquery('simple', $1))
-		ORDER BY country->'name'->'official'
+		SELECT COUNT(*) OVER(), country FROM countries c
+		CROSS JOIN LATERAL jsonb_each(c.country -> 'name') as j(key, value)
+		WHERE j.key = 'common' AND j.value::text ILIKE '%' || $1 || '%'
+		LIMIT $2 OFFSET $3
 	`
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	rows, err := c.DB.QueryContext(ctx, query, name)
-	if err != nil {
-		return nil, err
-	}
-
-	defer rows.Close()
-
-	countries := []*Country{}
-
-	for rows.Next() {
-		var country Country
-
-		err := rows.Scan(&country)
-		if err != nil {
-			return nil, err
-		}
-
-		countries = append(countries, &country)
-	}
-
-	if err = rows.Err(); err != nil {
-		return nil, err
-	}
-
-	if len(countries) == 0 {
-		return nil, ErrRecordNotFound
-	}
-
-	return countries, nil
-
+	return c.multiRows(ctx, query, name, filers)
 }
 
 func (c CountryModel) GetByCode(code string) (*Country, error) {
@@ -242,4 +203,159 @@ func (c CountryModel) GetByCode(code string) (*Country, error) {
 	}
 
 	return &country, nil
+}
+
+func (c CountryModel) GetByCapital(capital string) (*Country, error) {
+	query := `
+		SELECT country FROM countries c
+		WHERE (to_tsvector('simple', c.country -> 'capital') @@ plainto_tsquery('simple', $1))
+	`
+
+	var country Country
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	err := c.DB.QueryRowContext(ctx, query, capital).Scan(&country)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, ErrRecordNotFound
+		default:
+			return nil, err
+		}
+	}
+
+	return &country, nil
+}
+
+func (c CountryModel) GetByCodes(codes []string) ([]*Country, error) {
+	var countries []*Country
+	var queried = map[string]uint8{}
+
+	for _, code := range codes {
+		code = strings.ToUpper(code)
+		country, err := c.GetByCode(code)
+		if err != nil {
+			log.Println(code)
+			return nil, err
+		}
+
+		if _, ok := queried[country.Name.Common]; ok {
+			continue
+		}
+
+		countries = append(countries, country)
+		queried[country.Name.Common] = 1
+	}
+
+	return countries, nil
+}
+
+func (c CountryModel) GetByCurrency(currency string, filters Filters) ([]*Country, Metadata, error) {
+	query := `
+		SELECT COUNT(*) OVER(), country FROM countries c
+		CROSS JOIN LATERAL jsonb_each(c.country->'currencies') AS j(key, value)
+		WHERE j.key = $1 
+		OR j.value::text ILIKE '%' || $1 || '%'
+		LIMIT $2 OFFSET $3
+	`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	return c.multiRows(ctx, query, currency, filters)
+}
+
+func (c CountryModel) GetByLanguage(language string, filters Filters) ([]*Country, Metadata, error) {
+	query := `
+		SELECT COUNT(*) OVER(), country FROM countries c
+		CROSS JOIN LATERAL jsonb_each(c.country->'languages') AS j(key, value)
+		WHERE j.key = $1
+		OR j.value::text ILIKE '%' || $1 || '%'
+		LIMIT $2 OFFSET $3
+	`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	return c.multiRows(ctx, query, language, filters)
+}
+
+func (c CountryModel) GetByRegion(region string, filters Filters) ([]*Country, Metadata, error) {
+	query := `
+		SELECT COUNT(*) OVER(), country FROM countries c
+		WHERE c.country ->> 'region' ILIKE '%' || $1 || '%'
+		LIMIT $2 OFFSET $3
+ 	`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	return c.multiRows(ctx, query, region, filters)
+}
+
+func (c CountryModel) GetBySubregion(subregion string, filters Filters) ([]*Country, Metadata, error) {
+	query := `
+		SELECT COUNT(*) OVER(), country FROM countries c
+		WHERE c.country ->> 'subregion' ILIKE '%' || $1 || '%'
+		LIMIT $2 OFFSET $3
+	`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	return c.multiRows(ctx, query, subregion, filters)
+}
+
+func (c CountryModel) GetByDemonyms(demonyms string, filters Filters) ([]*Country, Metadata, error) {
+	query := `
+		SELECT COUNT(*) OVER(), country FROM countries c
+		CROSS JOIN LATERAL jsonb_each(c.country->'demonyms') AS j(key, value)
+		WHERE j.value::text ILIKE '%' || $1 || '%'
+		LIMIT $2 OFFSET $3
+	`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	return c.multiRows(ctx, query, demonyms, filters)
+}
+
+func (c CountryModel) multiRows(ctx context.Context, query, placeholder string, filters Filters) ([]*Country, Metadata, error) {
+	rows, err := c.DB.QueryContext(ctx, query, placeholder, filters.limit(), filters.offset())
+	if err != nil {
+		return nil, Metadata{}, err
+	}
+	defer rows.Close()
+
+	totalRecords := 0
+	countries := []*Country{}
+
+	for rows.Next() {
+		var country Country
+
+		err := rows.Scan(
+			&totalRecords,
+			&country,
+		)
+		if err != nil {
+			return nil, Metadata{}, err
+		}
+
+		countries = append(countries, &country)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, Metadata{}, err
+	}
+
+	if len(countries) == 0 {
+		return nil, Metadata{}, ErrRecordNotFound
+	}
+
+	metadata := calculateMetadata(totalRecords, filters.Page, filters.PageSize)
+
+	return countries, metadata, nil
+
 }

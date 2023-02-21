@@ -1,5 +1,5 @@
 # include variables from .env file
-include .env
+include ./.envrc
 
 #========================================================================================================#
 # HELPERS
@@ -38,8 +38,8 @@ build/api:
 # DEVELOPMENT
 #=========================================================================================================#
 
-.PHONY: run/api/binary
-launch/api/binary:
+.PHONY: run/binary
+run/binary:
 	@./bin/api -db-dsn=${CRESTCOUNTRIES_DB_DSN}
 
 ## run/api: run the cmd/api application

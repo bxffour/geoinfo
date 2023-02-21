@@ -9,8 +9,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Nana-Seyram/crest-countries/internal/data"
-	"github.com/Nana-Seyram/crest-countries/internal/jsonlog"
+	"github.com/bxffour/crest-countries/internal/data"
+	"github.com/bxffour/crest-countries/internal/jsonlog"
 	"github.com/joho/godotenv"
 
 	_ "github.com/lib/pq"
@@ -47,6 +47,7 @@ func main() {
 	flag.IntVar(&cfg.port, "port", 8080, "server port")
 	flag.StringVar(&cfg.env, "env", "development", "Environment ( development | staging | production )")
 
+	flag.StringVar(&cfg.db.dsn, "db-dsn", "", "Postgres database connection string")
 	flag.StringVar(&dsn, "dsn-path", "/etc/crest/.env", "path to .env file containing database connection string")
 	flag.IntVar(&cfg.db.maxOpenConns, "db-max-open-conns", 25, "Postgresql maximum open connections")
 	flag.IntVar(&cfg.db.maxIdleConns, "db-max-idle-conns", 25, "Postgresql maximum idle connections")
@@ -65,9 +66,11 @@ func main() {
 
 	logger := jsonlog.New(os.Stdout, jsonlog.LevelInfo)
 
-	err := cfg.loadEnv(dsn)
-	if err != nil {
-		logger.PrintFatal(err, nil)
+	if cfg.db.dsn == "" && dsn != "" {
+		err := cfg.loadEnv(dsn)
+		if err != nil {
+			logger.PrintFatal(err, nil)
+		}
 	}
 
 	db, err := openDB(cfg)

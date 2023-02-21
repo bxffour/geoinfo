@@ -1,4 +1,4 @@
-module github.com/Nana-Seyram/crest-countries
+module github.com/bxffour/crest-countries
 
 go 1.18
 

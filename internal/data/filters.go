@@ -3,7 +3,7 @@ package data
 import (
 	"math"
 
-	"github.com/Nana-Seyram/crest-countries/internal/validator"
+	"github.com/bxffour/crest-countries/internal/validator"
 )
 
 type Filters struct {

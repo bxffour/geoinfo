@@ -29,3 +29,5 @@ secrets.sh
 # vendor/
 .vscode/
 bin/
+.envrc
+deployments/bare-metal/
