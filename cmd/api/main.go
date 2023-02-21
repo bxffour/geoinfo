@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	"expvar"
 	"flag"
 	"fmt"
 	"os"
@@ -30,6 +31,11 @@ type config struct {
 		maxOpenConns int
 		maxIdleConns int
 		maxIdleTime  string
+	}
+	limiter struct {
+		rps     float64
+		burst   int
+		enabled bool
 	}
 }
 

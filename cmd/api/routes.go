@@ -6,7 +6,7 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
-func (app *application) routes() *httprouter.Router {
+func (app *application) routes() http.Handler {
 	router := httprouter.New()
 
 	router.HandlerFunc(http.MethodGet, "/v1/healthcheck", app.healthcheckHandler)
@@ -22,5 +22,5 @@ func (app *application) routes() *httprouter.Router {
 	router.HandlerFunc(http.MethodGet, "/v1/countries/subregion/:region", app.getCountriesBySubregionHandler)
 	router.HandlerFunc(http.MethodGet, "/v1/countries/demonym/:demonym", app.getCountriesByDemonymHandler)
 
-	return router
+	return app.recoverPanic(app.rateLimit(router))
 }
