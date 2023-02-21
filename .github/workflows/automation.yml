@@ -33,7 +33,7 @@ jobs:
           tags: ${{ secrets.DOCKER_USERNAME }}/crest-countries:latest, ${{ secrets.DOCKER_USERNAME }}/crest-countries:v0.0.${{ github.run_number }}
 
   release-nightly:
-    if: ${{ github.ref_name == 'develop' && github.event_name == 'push' }
+    if: ${{ github.ref_name == 'develop' && github.event_name == 'push' }}
     runs-on: ubuntu-latest
     steps:
       -
