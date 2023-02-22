@@ -83,6 +83,21 @@ func (app *application) getCountriesByCodesHandler(w http.ResponseWriter, r *htt
 	}
 }
 
+func (app *application) getCountryByTranslationHandler(w http.ResponseWriter, r *http.Request) {
+	params := app.readParam(r, "translation")
+
+	country, err := app.models.Countries.GetByTranslation(params)
+	if err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	err = app.writeJSON(w, http.StatusOK, envelope{"result": country}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
+}
+
 func (app *application) getAllCountriesHandler(w http.ResponseWriter, r *http.Request) {
 	var input data.Filters
 

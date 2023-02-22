@@ -234,6 +234,34 @@ func (c CountryModel) GetByCapital(capital string) (*Country, error) {
 	return &country, nil
 }
 
+func (c CountryModel) GetByTranslation(translation string) (*Country, error) {
+	query := `
+		SELECT country FROM countries c
+		WHERE EXISTS (
+			SELECT 1
+			FROM jsonb_each(c.country -> 'translations') as n(key, value)
+			where value::text ilike '%' || $1 || '%'
+		)
+	`
+
+	var country Country
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	err := c.DB.QueryRowContext(ctx, query, translation).Scan(&country)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, ErrRecordNotFound
+		default:
+			return nil, err
+		}
+	}
+
+	return &country, nil
+}
+
 func (c CountryModel) GetByCodes(codes []string) ([]*Country, error) {
 	var countries []*Country
 	var queried = map[string]uint8{}

@@ -7,6 +7,7 @@ import (
 	"flag"
 	"log"
 	"os"
+	"path"
 	"time"
 
 	"github.com/bxffour/crest-countries/internal/data"
@@ -16,8 +17,10 @@ import (
 
 func main() {
 	var dsn string
+	var filepath string
 
 	flag.StringVar(&dsn, "dsn", "", "postgres database connection string")
+	flag.StringVar(&filepath, "path", "", "path to the countries json file")
 	flag.Parse()
 
 	db, err := sql.Open("postgres", dsn)
@@ -35,7 +38,9 @@ func main() {
 		log.Fatal(err)
 	}
 
-	raw, err := os.ReadFile("countries.json")
+	cleanedPath := path.Clean(filepath)
+
+	raw, err := os.ReadFile(cleanedPath)
 	if err != nil {
 		log.Fatal(err)
 	}

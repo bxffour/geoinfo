@@ -21,6 +21,7 @@ func (app *application) routes() http.Handler {
 	router.HandlerFunc(http.MethodGet, "/v1/countries/region/:region", app.getCountriesByRegionHandler)
 	router.HandlerFunc(http.MethodGet, "/v1/countries/subregion/:region", app.getCountriesBySubregionHandler)
 	router.HandlerFunc(http.MethodGet, "/v1/countries/demonym/:demonym", app.getCountriesByDemonymHandler)
+	router.HandlerFunc(http.MethodGet, "/v1/countries/translation/:translation", app.getCountryByTranslationHandler)
 
 	return app.recoverPanic(app.rateLimit(router))
 }
