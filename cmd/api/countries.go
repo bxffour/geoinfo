@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/bxffour/crest-countries/internal/data"
 	"github.com/bxffour/crest-countries/internal/validator"
@@ -11,6 +12,11 @@ import (
 
 func (app *application) getCountriesByNameHandler(w http.ResponseWriter, r *http.Request) {
 	name := app.readParam(r, "name")
+
+	if !utf8.ValidString(name) {
+		app.failedValidationResponse(w, r, map[string]string{"invalid input error": "only valid utf8 characeters are allowed"})
+		return
+	}
 
 	var input data.Filters
 

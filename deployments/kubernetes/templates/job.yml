@@ -1,0 +1,28 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Values.batch.name }}
+spec:
+  template:
+    spec:
+      containers:
+      - name: {{ .Values.batch.name }}
+        image: "{{ .Values.batch.image.name }}:{{ .Values.batch.image.tag }}" 
+        env:
+        - name: POSTGRES_DB_DSN
+          valueFrom:
+            secretKeyRef:
+              name: batch-job-secrets
+              key: POSTGRES_DB_DSN
+        - name: CREST_ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: batch-job-secrets
+              key: CREST_ADMIN_PASSWORD
+        - name: CREST_API_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: batch-job-secrets
+              key: CREST_API_PASSWORD
+      restartPolicy: OnFailure
+      

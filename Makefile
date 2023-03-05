@@ -40,7 +40,7 @@ build/api:
 
 .PHONY: run/binary
 run/binary:
-	@./bin/api -db-dsn=${CRESTCOUNTRIES_DB_DSN}
+	@./bin/api --db-dsn=${CRESTCOUNTRIES_DB_DSN}
 
 ## run/api: run the cmd/api application
 .PHONY: run/api

@@ -3,27 +3,32 @@ package main
 import (
 	"context"
 	"database/sql"
+	"embed"
 	"encoding/json"
-	"flag"
+	"io"
 	"log"
-	"os"
-	"path"
 	"time"
 
 	"github.com/bxffour/crest-countries/internal/data"
+	flag "github.com/spf13/pflag"
 
 	_ "github.com/lib/pq"
 )
 
+//go:embed countries.json
+var configFS embed.FS
+
 func main() {
 	var dsn string
-	var filepath string
 
-	flag.StringVar(&dsn, "dsn", "", "postgres database connection string")
-	flag.StringVar(&filepath, "path", "", "path to the countries json file")
+	flag.StringVarP(&dsn, "database", "d", "", "database connection string")
 	flag.Parse()
 
-	db, err := sql.Open("postgres", dsn)
+	// if !validateDsn(dsn) {
+	// 	log.Fatal(errors.New("err invalid dsn: valid format -> postgres://username:password@hostname:port/database_name?optional_params"))
+	// }
+
+	db, err := sql.Open("postgres", "passfile=/home/sxntana/.pgpass")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -38,9 +43,14 @@ func main() {
 		log.Fatal(err)
 	}
 
-	cleanedPath := path.Clean(filepath)
+	file, err := configFS.Open("countries.json")
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	raw, err := os.ReadFile(cleanedPath)
+	defer file.Close()
+
+	raw, err := io.ReadAll(file)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -85,3 +95,9 @@ func insert(item *item, db *sql.DB) error {
 
 	return db.QueryRowContext(ctx, query, item.Country).Scan(&item.ID, &item.Version)
 }
+
+// func validateDsn(dsn string) bool {
+// 	r := regexp.MustCompile(`^postgres:\/\/(\w+):([^@]+)@([\w.-]+):(\d+)\/(\w+)(?:\?(.+))?$`)
+
+// 	return r.MatchString(dsn)
+// }

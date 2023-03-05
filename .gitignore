@@ -16,8 +16,11 @@
 Docker/
 postgres/
 dump/
+cmd/bootstrap/bin/
+test/
 config.sh
 secrets.sh
+.ignore
 
 # Test binary, built with `go test -c`
 *.test
@@ -31,3 +34,4 @@ secrets.sh
 bin/
 .envrc
 deployments/bare-metal/
+deployments/kubernetes/values.yml

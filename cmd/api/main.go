@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"database/sql"
-	"flag"
 	"fmt"
 	"os"
 	"sync"
@@ -12,6 +11,7 @@ import (
 	"github.com/bxffour/crest-countries/internal/data"
 	"github.com/bxffour/crest-countries/internal/jsonlog"
 	"github.com/joho/godotenv"
+	flag "github.com/spf13/pflag"
 
 	_ "github.com/lib/pq"
 )
@@ -71,7 +71,7 @@ func main() {
 
 	logger := jsonlog.New(os.Stdout, jsonlog.LevelInfo)
 
-	if cfg.db.dsn == "" && dsn != "" {
+	if cfg.db.dsn == "" {
 		err := cfg.loadEnv(dsn)
 		if err != nil {
 			logger.PrintFatal(err, nil)
@@ -129,8 +129,8 @@ func (c *config) loadEnv(path string) error {
 		return err
 	}
 
-	conn_string := os.Getenv("CRESTCOUNTRIES_DB_DSN")
-	c.db.dsn = conn_string
+	dsn := os.Getenv("CRESTCOUNTRIES_DB_DSN")
+	c.db.dsn = dsn
 
 	return nil
 }

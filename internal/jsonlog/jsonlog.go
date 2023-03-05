@@ -65,14 +65,17 @@ func (l *Logger) print(level Level, message string, properties map[string]string
 	aux := struct {
 		Level      string            `json:"level"`
 		Time       string            `json:"time"`
-		Message    string            `json:"message"`
+		Message    string            `json:"message,omitempty"`
 		Properties map[string]string `json:"properties,omitempty"`
 		Trace      string            `json:"trace,omitempty"`
 	}{
 		Level:      level.String(),
 		Time:       time.Now().UTC().Format(time.RFC3339),
-		Message:    message,
 		Properties: properties,
+	}
+
+	if message == "" {
+		aux.Message = message
 	}
 
 	if level >= LevelError {

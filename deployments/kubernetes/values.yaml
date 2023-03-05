@@ -1,0 +1,34 @@
+app:
+  name: crest-countries
+  environment: development
+  image:
+    name: "ghcr.io/bxffour/crest/api"
+    tag: "0.0.5"
+    containerPort: "8080"
+  database:
+    connectionString: "postgres://crest_api:valkyrie2@crest-postgresql.default.svc.cluster.local:5432/crest_countries?sslmode=disable"
+    maxOpenConns: "25"
+    maxIdleConns: "25"
+    maxIdleTime: "15m"
+
+batch:
+  name: "pgdata-dump"
+  image:
+    name: "ghcr.io/bxffour/crest/bootstrap"
+    tag: "1.1.3"
+  connectionString: "postgres://postgres:magafium..@crest-postgresql.default.svc.cluster.local:5432/crest_countries?sslmode=disable"
+  passwords:
+    adminPassword: "valkyrie1"
+    apiPassword: "valkyrie2"
+
+postgresql:
+  auth:
+    postgresPassword: "magafium.."
+    database: "crest_countries"
+
+  primary:
+    persistence:
+      existingClaim: "postgres-pvc"
+
+  image:
+    tag: 15.2.0-debian-11-r5
