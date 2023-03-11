@@ -3,10 +3,12 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"os"
 	"sync"
 	"time"
 
 	"github.com/tomasen/realip"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"golang.org/x/time/rate"
 )
 
@@ -77,4 +79,10 @@ func (app *application) rateLimit(next http.Handler) http.Handler {
 
 		next.ServeHTTP(w, r)
 	})
+}
+
+func (app *application) otelhttp(handler http.Handler) http.Handler {
+	hostname, _ := os.Hostname()
+	h := otelhttp.NewHandler(handler, "crest-countries", otelhttp.WithServerName(hostname))
+	return h
 }

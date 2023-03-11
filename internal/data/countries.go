@@ -122,16 +122,19 @@ func (c *Country) Scan(value interface{}) error {
 	return json.Unmarshal(b, &c)
 }
 
-func (c *CountryModel) GetAll(filters Filters) ([]*Country, Metadata, error) {
+func (c *CountryModel) GetAll(ctx context.Context, filters Filters) ([]*Country, Metadata, error) {
+	ctx, span := tracer.Start(ctx, "database-get-all")
+	defer span.End()
+
 	query := `
 			SELECT COUNT(*) OVER(), country 
 			FROM countries
 			LIMIT $1 OFFSET $2`
 
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	dbCtx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
-	rows, err := c.DB.QueryContext(ctx, query, filters.limit(), filters.offset())
+	rows, err := c.DB.QueryContext(dbCtx, query, filters.limit(), filters.offset())
 	if err != nil {
 		return nil, Metadata{}, err
 	}
@@ -164,7 +167,10 @@ func (c *CountryModel) GetAll(filters Filters) ([]*Country, Metadata, error) {
 	return countries, metadata, nil
 }
 
-func (c *CountryModel) GetByName(name string, filers Filters) ([]*Country, Metadata, error) {
+func (c *CountryModel) GetByName(otelCtx context.Context, name string, filers Filters) ([]*Country, Metadata, error) {
+	cctx, span := tracer.Start(otelCtx, "database-get-by-name")
+	defer span.End()
+
 	query := `
 		SELECT COUNT(*) OVER(), country FROM countries c
 		WHERE EXISTS (
@@ -177,13 +183,16 @@ func (c *CountryModel) GetByName(name string, filers Filters) ([]*Country, Metad
 		LIMIT $2 OFFSET $3
 	`
 
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(cctx, 3*time.Second)
 	defer cancel()
 
 	return c.multiRows(ctx, query, name, filers)
 }
 
-func (c CountryModel) GetByCode(code string) (*Country, error) {
+func (c CountryModel) GetByCode(otelCtx context.Context, code string) (*Country, error) {
+	_, span := tracer.Start(otelCtx, "database-get-by-code")
+	defer span.End()
+
 	query := `
 		SELECT country FROM countries
 		WHERE country->'cca2' ? $1
@@ -210,7 +219,10 @@ func (c CountryModel) GetByCode(code string) (*Country, error) {
 	return &country, nil
 }
 
-func (c CountryModel) GetByCapital(capital string) (*Country, error) {
+func (c CountryModel) GetByCapital(otelCtx context.Context, capital string) (*Country, error) {
+	_, span := tracer.Start(otelCtx, "database-get-by-capital")
+	defer span.End()
+
 	query := `
 		SELECT country FROM countries c
 		WHERE (to_tsvector('simple', c.country -> 'capital') @@ plainto_tsquery('simple', $1))
@@ -234,7 +246,10 @@ func (c CountryModel) GetByCapital(capital string) (*Country, error) {
 	return &country, nil
 }
 
-func (c CountryModel) GetByTranslation(translation string) (*Country, error) {
+func (c CountryModel) GetByTranslation(otelCtx context.Context, translation string) (*Country, error) {
+	_, span := tracer.Start(otelCtx, "database-get-by-translation")
+	defer span.End()
+
 	query := `
 		SELECT country FROM countries c
 		WHERE EXISTS (
@@ -262,13 +277,16 @@ func (c CountryModel) GetByTranslation(translation string) (*Country, error) {
 	return &country, nil
 }
 
-func (c CountryModel) GetByCodes(codes []string) ([]*Country, error) {
+func (c CountryModel) GetByCodes(otelCtx context.Context, codes []string) ([]*Country, error) {
+	ctx, span := tracer.Start(otelCtx, "database-get-by-codes")
+	defer span.End()
+
 	var countries []*Country
 	var queried = map[string]uint8{}
 
 	for _, code := range codes {
 		code = strings.ToUpper(code)
-		country, err := c.GetByCode(code)
+		country, err := c.GetByCode(ctx, code)
 		if err != nil {
 			log.Println(code)
 			return nil, err
@@ -285,7 +303,10 @@ func (c CountryModel) GetByCodes(codes []string) ([]*Country, error) {
 	return countries, nil
 }
 
-func (c CountryModel) GetByCurrency(currency string, filters Filters) ([]*Country, Metadata, error) {
+func (c CountryModel) GetByCurrency(otelCtx context.Context, currency string, filters Filters) ([]*Country, Metadata, error) {
+	cctx, span := tracer.Start(otelCtx, "database-get-by-currency")
+	defer span.End()
+
 	query := `
 		SELECT COUNT(*) OVER(), country FROM countries c
 		CROSS JOIN LATERAL jsonb_each(c.country->'currencies') AS j(key, value)
@@ -294,13 +315,16 @@ func (c CountryModel) GetByCurrency(currency string, filters Filters) ([]*Countr
 		LIMIT $2 OFFSET $3
 	`
 
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(cctx, 3*time.Second)
 	defer cancel()
 
 	return c.multiRows(ctx, query, currency, filters)
 }
 
-func (c CountryModel) GetByLanguage(language string, filters Filters) ([]*Country, Metadata, error) {
+func (c CountryModel) GetByLanguage(otelCtx context.Context, language string, filters Filters) ([]*Country, Metadata, error) {
+	cctx, span := tracer.Start(otelCtx, "database-get-by-currency")
+	defer span.End()
+
 	query := `
 		SELECT COUNT(*) OVER(), country FROM countries c
 		CROSS JOIN LATERAL jsonb_each(c.country->'languages') AS j(key, value)
@@ -309,39 +333,48 @@ func (c CountryModel) GetByLanguage(language string, filters Filters) ([]*Countr
 		LIMIT $2 OFFSET $3
 	`
 
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(cctx, 3*time.Second)
 	defer cancel()
 
 	return c.multiRows(ctx, query, language, filters)
 }
 
-func (c CountryModel) GetByRegion(region string, filters Filters) ([]*Country, Metadata, error) {
+func (c CountryModel) GetByRegion(otelCtx context.Context, region string, filters Filters) ([]*Country, Metadata, error) {
+	cctx, span := tracer.Start(otelCtx, "database-get-by-currency")
+	defer span.End()
+
 	query := `
 		SELECT COUNT(*) OVER(), country FROM countries c
 		WHERE c.country ->> 'region' ILIKE '%' || $1 || '%'
 		LIMIT $2 OFFSET $3
  	`
 
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(cctx, 3*time.Second)
 	defer cancel()
 
 	return c.multiRows(ctx, query, region, filters)
 }
 
-func (c CountryModel) GetBySubregion(subregion string, filters Filters) ([]*Country, Metadata, error) {
+func (c CountryModel) GetBySubregion(otelCtx context.Context, subregion string, filters Filters) ([]*Country, Metadata, error) {
+	cctx, span := tracer.Start(otelCtx, "database-get-by-currency")
+	defer span.End()
+
 	query := `
 		SELECT COUNT(*) OVER(), country FROM countries c
 		WHERE c.country ->> 'subregion' ILIKE '%' || $1 || '%'
 		LIMIT $2 OFFSET $3
 	`
 
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(cctx, 3*time.Second)
 	defer cancel()
 
 	return c.multiRows(ctx, query, subregion, filters)
 }
 
-func (c CountryModel) GetByDemonyms(demonyms string, filters Filters) ([]*Country, Metadata, error) {
+func (c CountryModel) GetByDemonyms(otelCtx context.Context, demonyms string, filters Filters) ([]*Country, Metadata, error) {
+	cctx, span := tracer.Start(otelCtx, "database-get-by-currency")
+	defer span.End()
+
 	query := `
 		SELECT COUNT(*) OVER(), country FROM countries c
 		CROSS JOIN LATERAL jsonb_each(c.country->'demonyms') AS j(key, value)
@@ -349,13 +382,16 @@ func (c CountryModel) GetByDemonyms(demonyms string, filters Filters) ([]*Countr
 		LIMIT $2 OFFSET $3
 	`
 
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(cctx, 3*time.Second)
 	defer cancel()
 
 	return c.multiRows(ctx, query, demonyms, filters)
 }
 
 func (c CountryModel) multiRows(ctx context.Context, query, placeholder string, filters Filters) ([]*Country, Metadata, error) {
+	_, span := tracer.Start(ctx, "muiltirow-func")
+	defer span.End()
+
 	rows, err := c.DB.QueryContext(ctx, query, placeholder, filters.limit(), filters.offset())
 	if err != nil {
 		return nil, Metadata{}, err
