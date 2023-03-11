@@ -1,12 +1,24 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net/http"
+	"time"
+
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 )
 
 func (app *application) logError(r *http.Request, err error) {
 	app.logger.PrintError(err, nil)
+}
+
+func (app *application) recordSpanError(ctx context.Context, err error, description string) {
+	span := trace.SpanFromContext(ctx)
+
+	span.RecordError(err, trace.WithTimestamp(time.Now()))
+	span.SetStatus(codes.Error, description)
 }
 
 func (app *application) errorResponse(w http.ResponseWriter, r *http.Request, status int, message interface{}) {
@@ -44,11 +56,11 @@ func (app *application) failedValidationResponse(w http.ResponseWriter, r *http.
 	app.errorResponse(w, r, http.StatusUnprocessableEntity, errors)
 }
 
-func (app *application) editConflictResponse(w http.ResponseWriter, r *http.Request) {
-	message := "unable to update the record due to an edit conflict, please try again"
+// func (app *application) editConflictResponse(w http.ResponseWriter, r *http.Request) {
+// 	message := "unable to update the record due to an edit conflict, please try again"
 
-	app.errorResponse(w, r, http.StatusConflict, message)
-}
+// 	app.errorResponse(w, r, http.StatusConflict, message)
+// }
 
 func (app *application) rateLimitExceededResponse(w http.ResponseWriter, r *http.Request) {
 	message := "rate limit exceeded"
@@ -56,29 +68,29 @@ func (app *application) rateLimitExceededResponse(w http.ResponseWriter, r *http
 	app.errorResponse(w, r, http.StatusTooManyRequests, message)
 }
 
-func (app *application) invalidCredentialsResponse(w http.ResponseWriter, r *http.Request) {
-	message := "invalid authentication credentials"
-	app.errorResponse(w, r, http.StatusUnauthorized, message)
-}
+// func (app *application) invalidCredentialsResponse(w http.ResponseWriter, r *http.Request) {
+// 	message := "invalid authentication credentials"
+// 	app.errorResponse(w, r, http.StatusUnauthorized, message)
+// }
 
-func (app *application) invalidAuthenticationTokenResponse(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("WWW-Authenticate", "Bearer")
+// func (app *application) invalidAuthenticationTokenResponse(w http.ResponseWriter, r *http.Request) {
+// 	w.Header().Set("WWW-Authenticate", "Bearer")
 
-	message := "invalid or missing authentication token"
-	app.errorResponse(w, r, http.StatusUnauthorized, message)
-}
+// 	message := "invalid or missing authentication token"
+// 	app.errorResponse(w, r, http.StatusUnauthorized, message)
+// }
 
-func (app *application) authenticationRequiredResponse(w http.ResponseWriter, r *http.Request) {
-	message := "you must be authenticated to access this resource"
-	app.errorResponse(w, r, http.StatusUnauthorized, message)
-}
+// func (app *application) authenticationRequiredResponse(w http.ResponseWriter, r *http.Request) {
+// 	message := "you must be authenticated to access this resource"
+// 	app.errorResponse(w, r, http.StatusUnauthorized, message)
+// }
 
-func (app *application) inactiveAccountResponse(w http.ResponseWriter, r *http.Request) {
-	message := "your user account must be activated to access this resource"
-	app.errorResponse(w, r, http.StatusForbidden, message)
-}
+// func (app *application) inactiveAccountResponse(w http.ResponseWriter, r *http.Request) {
+// 	message := "your user account must be activated to access this resource"
+// 	app.errorResponse(w, r, http.StatusForbidden, message)
+// }
 
-func (app *application) notPermittedResponse(w http.ResponseWriter, r *http.Request) {
-	message := "your user account doesn't have the necessary permissions to access this resource"
-	app.errorResponse(w, r, http.StatusForbidden, message)
-}
+// func (app *application) notPermittedResponse(w http.ResponseWriter, r *http.Request) {
+// 	message := "your user account doesn't have the necessary permissions to access this resource"
+// 	app.errorResponse(w, r, http.StatusForbidden, message)
+// }
