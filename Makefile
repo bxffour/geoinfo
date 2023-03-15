@@ -40,8 +40,9 @@ build/api:
 
 .PHONY: run/binary
 run/binary:
-	@./bin/api --db-dsn=${CRESTCOUNTRIES_DB_DSN}
-
+	@./bin/api --db-dsn=${CRESTCOUNTRIES_DB_DSN} --db-max-open-conns=300 --db-max-idle-conns=300
+# @./bin/api --db-dsn=${CRESTCOUNTRIES_DB_DSN}
+	
 ## run/api: run the cmd/api application
 .PHONY: run/api
 launch/api:

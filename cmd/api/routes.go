@@ -23,5 +23,5 @@ func (app *application) routes() http.Handler {
 	router.HandlerFunc(http.MethodGet, "/v1/countries/demonym/:demonym", app.getCountriesByDemonymHandler)
 	router.HandlerFunc(http.MethodGet, "/v1/countries/translation/:translation", app.getCountryByTranslationHandler)
 
-	return app.otelhttp(app.rateLimit(app.recoverPanic(app.rateLimit(router))))
+	return app.otelhttp(app.recoverPanic(app.rateLimit(router)))
 }
