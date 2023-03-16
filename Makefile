@@ -32,7 +32,20 @@ build/api:
 	@echo 'building cmd/api...'
 	go build -ldflags=${linker_flags} -o ./bin/api ./cmd/api
 	GOOS=linux GOARCH=amd64 go build -ldflags=${linker_flags} -o ./bin/linux_amd64/api ./cmd/api
-	
+
+ver?=0.0.6
+IMAGE_NAME=ghcr.io/bxffour/crest/api
+.PHONY: build/docker
+build/docker:
+	docker build \
+		--build-arg IMAGE_VERSION=${ver} \
+		--build-arg IMAGE_REVISION=${git_description} \
+		--build-arg IMAGE_CREATED=${current_time} \
+		--build-arg LINKER_FLAGS=$(linker_flags) \
+		--tag ${IMAGE_NAME}:${ver} \
+		--tag ${IMAGE_NAME}:${ver}-${git_description} \
+		.
+		
 
 #=========================================================================================================#
 # DEVELOPMENT
