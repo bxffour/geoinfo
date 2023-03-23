@@ -35,6 +35,7 @@ build/api:
 
 ver?=0.0.6
 IMAGE_NAME=ghcr.io/bxffour/crest/api
+## build/docker: build the cmd/api dockerfile
 .PHONY: build/docker
 build/docker:
 	docker build \
@@ -53,8 +54,7 @@ build/docker:
 
 .PHONY: run/binary
 run/binary:
-	@./bin/api --db-dsn=${CRESTCOUNTRIES_DB_DSN} --db-max-open-conns=300 --db-max-idle-conns=300
-# @./bin/api --db-dsn=${CRESTCOUNTRIES_DB_DSN}
+	@./bin/api --config=./config.toml 
 	
 ## run/api: run the cmd/api application
 .PHONY: run/api
@@ -78,3 +78,40 @@ db/migrations/up: confirm
 	@echo 'Running up migrations...'
 	migrate -path ./migrations -database ${CRESTCOUNTRIES_DB_DSN} up
 
+
+#=========================================================================================================#
+# SSL
+#=========================================================================================================#
+
+CONFIG_PATH=${HOME}/.crest
+WORKDIR=deployments/ssl
+
+.PHONY: init
+init:
+	mkdir -p ${CONFIG_PATH}
+
+.PHONY: clean
+clean:
+	rm -rf ${CONFIG_PATH}
+
+.PHONY: gencert
+gencert:
+	cfssl gencert \
+			-initca ${WORKDIR}/ca-csr.json | cfssljson -bare ca
+
+	cfssl gencert \
+			-ca=ca.pem \
+			-ca-key=ca-key.pem \
+			-config=${WORKDIR}/ca-config.json \
+			-profile=server \
+			${WORKDIR}/server-csr.json | cfssljson -bare server
+
+	cfssl gencert \
+			-ca=ca.pem \
+			-ca-key=ca-key.pem \
+			-config=${WORKDIR}/ca-config.json \
+			-profile=client \
+			-cn="crest" \
+			${WORKDIR}/client-csr.json | cfssljson -bare postgresql
+
+	mv *.pem *.csr ${CONFIG_PATH}

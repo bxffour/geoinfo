@@ -47,6 +47,8 @@ LABEL org.opencontainers.image.title="geoinfo" \
 
 EXPOSE ${CREST_PORT}
 
-CMD crest-app --port=${CREST_PORT} --env=${CREST_ENV} --dsn-path=${CREST_DSN_PATH} \
---db-max-open-conns=${CREST_DB_MAX_OPEN_CONNS} --db-max-idle-conns=${CREST_DB_MAX_OPEN_CONNS} \
---db-dsn=${CREST_DB_DSN} --db-max-idle-time=${CREST_DB_MAX_IDLE_TIME}
+CMD crest-app --port=${CREST_PORT} --db-max-open-conns=${CREST_DB_MAX_OPEN_CONNS} \
+    --db-max-idle-conns=${CREST_DB_MAX_OPEN_CONNS} \
+    --db-user=${CREST_DB_USER} --db-password=${CREST_DB_PASSWORD} --db-dbname=${CREST_DATABASE} \
+    --db-port=${CREST_DB_PORT} --db-host=${CREST_DB_HOST} \
+    --db-dsn=${CREST_DB_DSN} --db-max-idle-time=${CREST_DB_MAX_IDLE_TIME}
