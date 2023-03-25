@@ -83,7 +83,7 @@ db/migrations/up: confirm
 # SSL
 #=========================================================================================================#
 
-CONFIG_PATH=${HOME}/.crest
+CONFIG_PATH=${HOME}/.crest_test
 WORKDIR=deployments/ssl
 
 .PHONY: init
@@ -104,7 +104,7 @@ gencert:
 			-ca-key=ca-key.pem \
 			-config=${WORKDIR}/ca-config.json \
 			-profile=server \
-			${WORKDIR}/server-csr.json | cfssljson -bare server
+			${WORKDIR}/server-csr.json | cfssljson -bare pgsql
 
 	cfssl gencert \
 			-ca=ca.pem \
@@ -114,4 +114,5 @@ gencert:
 			-cn="crest" \
 			${WORKDIR}/client-csr.json | cfssljson -bare postgresql
 
+	cp pgsql*.pem ca.pem deployments/postgres/bleh
 	mv *.pem *.csr ${CONFIG_PATH}
