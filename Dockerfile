@@ -9,12 +9,15 @@ COPY . /go/src/app
 WORKDIR /go/src/app
 
 RUN go mod download
-RUN CGO_ENABLED=0 go build -o /go/bin/crest-app ./cmd/api
+RUN CGO_ENABLED=0 go build -o /go/bin/geoinfo-api ./cmd/api
 
 ##
 ## DEPLOY
 ##
 FROM alpine:3.17.2
+
+RUN apk add --no-cache postgresql-client
+RUN apk add --no-cache bash
 
 ENV SERVICE_USER=geoinfo \
     SERVICE_UID=1001 \
@@ -24,7 +27,9 @@ ENV SERVICE_USER=geoinfo \
 RUN addgroup -g ${SERVICE_GID} ${SERVICE_GROUP} && \
     adduser -D -H -G ${SERVICE_GROUP} -s /sbin/nologin -u ${SERVICE_UID} ${SERVICE_USER}
 
-COPY --from=build-env /go/bin/crest-app /usr/local/bin/
+COPY --from=build-env /go/bin/geoinfo-api /usr/local/bin/
+COPY ./geoinfo-start.sh /bin/gstart 
+RUN chmod +x /bin/gstart
 
 ENV CREST_PORT=8080
 
@@ -47,8 +52,4 @@ LABEL org.opencontainers.image.title="geoinfo" \
 
 EXPOSE ${CREST_PORT}
 
-CMD crest-app --port=${CREST_PORT} --db-max-open-conns=${CREST_DB_MAX_OPEN_CONNS} \
-    --db-max-idle-conns=${CREST_DB_MAX_OPEN_CONNS} \
-    --db-user=${CREST_DB_USER} --db-password=${CREST_DB_PASSWORD} --db-dbname=${CREST_DATABASE} \
-    --db-port=${CREST_DB_PORT} --db-host=${CREST_DB_HOST} \
-    --db-dsn=${CREST_DB_DSN} --db-max-idle-time=${CREST_DB_MAX_IDLE_TIME}
+CMD [ "gstart", "geoinfo-api"]

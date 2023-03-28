@@ -69,12 +69,14 @@ func main() {
 
 	logger.PrintInfo("database connection pool established", nil)
 
-	shutdown, err := initProvider()
-	if err != nil {
-		logger.PrintFatal(err, nil)
-	}
+	if viper.GetBool("telemetry") {
+		shutdown, err := initProvider()
+		if err != nil {
+			logger.PrintFatal(err, nil)
+		}
 
-	defer shutdown()
+		defer shutdown()
+	}
 
 	tracer := otel.GetTracerProvider().Tracer("github.com/bxffour/crest-countries")
 

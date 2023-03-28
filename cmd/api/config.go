@@ -31,6 +31,7 @@ type config struct {
 
 func setupFlags() error {
 	flag.String("config", "", "path to config file")
+	flag.String("secret", "", "config file for sensitive information")
 
 	flag.Int("port", 8080, "server port")
 	flag.String("env", "development", "Environment ( development | staging | production )")
@@ -55,6 +56,7 @@ func setupFlags() error {
 	flag.Bool("limiter.enabled", false, "Enable rate limiter")
 
 	flag.Bool("version", false, "Display version and exit")
+	flag.Bool("telemetry", false, "Activate otel collector")
 
 	flag.Parse()
 
@@ -75,6 +77,22 @@ func setupConfig(c *config) error {
 
 	c.port = viper.GetInt("port")
 	c.env = viper.GetString("env")
+	c.db.maxOpenConns = viper.GetInt("db.max-open-conns")
+	c.db.maxIdleConns = viper.GetInt("db.max-idle-conns")
+	c.db.maxIdleTime = viper.GetString("db.max-idle-time")
+
+	c.limiter.rps = viper.GetFloat64("limiter.rps")
+	c.limiter.burst = viper.GetInt("limiter.burst")
+	c.limiter.enabled = viper.GetBool("limiter.enabled")
+
+	secret := viper.GetString("secret")
+	viper.SetConfigFile(secret)
+
+	if err := viper.ReadInConfig(); err != nil {
+		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
+			return err
+		}
+	}
 
 	c.db.user = viper.GetString("db.user")
 	c.db.password = viper.GetString("db.password")
@@ -85,14 +103,6 @@ func setupConfig(c *config) error {
 	c.db.sslcert = viper.GetString("db.sslcert")
 	c.db.sslkey = viper.GetString("db.sslkey")
 	c.db.sslmode = viper.GetString("db.sslmode")
-
-	c.db.maxOpenConns = viper.GetInt("db.max-open-conns")
-	c.db.maxIdleConns = viper.GetInt("db.max-idle-conns")
-	c.db.maxIdleTime = viper.GetString("db.max-idle-time")
-
-	c.limiter.rps = viper.GetFloat64("limiter.rps")
-	c.limiter.burst = viper.GetInt("limiter.burst")
-	c.limiter.enabled = viper.GetBool("limiter.enabled")
 
 	return nil
 }

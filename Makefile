@@ -54,7 +54,7 @@ build/docker:
 
 .PHONY: run/binary
 run/binary:
-	@./bin/api --config=./config.toml 
+	@./bin/api --config=./config.toml --secret=./secret.toml 
 	
 ## run/api: run the cmd/api application
 .PHONY: run/api
