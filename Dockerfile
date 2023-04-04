@@ -28,7 +28,8 @@ RUN addgroup -g ${SERVICE_GID} ${SERVICE_GROUP} && \
     adduser -D -H -G ${SERVICE_GROUP} -s /sbin/nologin -u ${SERVICE_UID} ${SERVICE_USER}
 
 COPY --from=build-env /go/bin/geoinfo-api /usr/local/bin/
-COPY ./geoinfo-start.sh /bin/gstart 
+COPY ./artefacts/geoinfo-start.sh /bin/gstart
+COPY ./artefacts/wait-for-sh /bin/wait-for-sh 
 RUN chmod +x /bin/gstart
 
 ENV CREST_PORT=8080

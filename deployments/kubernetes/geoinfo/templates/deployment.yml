@@ -1,0 +1,76 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "common.names.fullname" . }}
+  namespace: {{ .Release.Namespace | quote }}
+  labels: {{ include "common.labels.standard" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {{ include "common.labels.matchLabels" . | nindent 6 }}
+  revisionHistoryLimit: 5
+  progressDeadlineSeconds: 300
+  minReadySeconds: 10
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels: {{ include "common.labels.standard" . | nindent 8 }}
+    spec:
+      initContainers:
+        # - name : geoinfo-create
+        #   image: "{{ .Values.batch.image.name }}:{{ .Values.batch.image.tag}}"
+        #   env:
+        #   - name: POSTGRES_DB_DSN
+        #     valueFrom:
+        #       secretKeyRef:
+        #         name: geoinfo-init-secrets
+        #         key: postgres-dsn
+        #   - name: GEOINFO_API_PASSWORD
+        #     valueFrom:
+        #       secretKeyRef:
+        #         name: geoinfo-init-secrets
+        #         key: geoinfo-api-password
+        - name: copy-config
+          image: busybox:1.36.0-glibc
+          volumeMounts:
+            - name: dshm
+              mountPath: /dev/shm
+            - name: geoinfo-data-dir
+              mountPath: /etc/geoinfo
+            - name: credentials
+              mountPath: /tmp/creds
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              cp /tmp/creds/* /etc/geoinfo && chown 1001:1001 /etc/geoinfo/* && chmod 0400 /etc/geoinfo/*
+      containers:
+      - name: {{ .Values.geoinfo.name }}
+        image: "{{ .Values.geoinfo.image.name }}:{{ .Values.geoinfo.image.tag }}"
+        ports:
+          - containerPort: {{ .Values.geoinfo.port }}
+        securityContext:
+          runAsUser: 1001
+          runAsGroup: 1001
+        volumeMounts:
+        - name: geoinfo-data-dir
+          mountPath: "/etc/geoinfo"
+        env:
+          - name: CONFIG_FILE
+            value: {{ include "geoinfo.ConfigFile" . }}
+          - name: SECRET_FILE
+            value: {{ include "geoinfo.CredsFile" . }}
+      volumes:
+        - name: geoinfo-data-dir
+          emptyDir: {}
+        - name: dshm
+          emptyDir:
+            medium: Memory
+            sizeLimit: 5Mi
+        - name: credentials
+          secret:
+            secretName: geoinfo-config

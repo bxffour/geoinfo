@@ -34,7 +34,7 @@ build/api:
 	GOOS=linux GOARCH=amd64 go build -ldflags=${linker_flags} -o ./bin/linux_amd64/api ./cmd/api
 
 ver?=0.0.6
-IMAGE_NAME=ghcr.io/bxffour/crest/api
+IMAGE_NAME=ghcr.io/bxffour/geoinfo/api
 ## build/docker: build the cmd/api dockerfile
 .PHONY: build/docker
 build/docker:
@@ -54,7 +54,7 @@ build/docker:
 
 .PHONY: run/binary
 run/binary:
-	@./bin/api --config=./config.toml --secret=./secret.toml 
+	@./bin/api --config=./config.yaml --secret=./secret.toml 
 	
 ## run/api: run the cmd/api application
 .PHONY: run/api
@@ -83,7 +83,8 @@ db/migrations/up: confirm
 # SSL
 #=========================================================================================================#
 
-CONFIG_PATH=${HOME}/.crest_test
+CONFIG_PATH?=${HOME}/.crest_test
+CONFIG_TF?=deployments/kubernetes/infra/certs
 WORKDIR=deployments/ssl
 
 .PHONY: init
@@ -94,7 +95,6 @@ init:
 clean:
 	rm -rf ${CONFIG_PATH}
 
-.PHONY: gencert
 gencert:
 	cfssl gencert \
 			-initca ${WORKDIR}/ca-csr.json | cfssljson -bare ca
@@ -104,7 +104,7 @@ gencert:
 			-ca-key=ca-key.pem \
 			-config=${WORKDIR}/ca-config.json \
 			-profile=server \
-			${WORKDIR}/server-csr.json | cfssljson -bare pgsql
+			${WORKDIR}/server-csr.json | cfssljson -bare pg-server
 
 	cfssl gencert \
 			-ca=ca.pem \
@@ -112,7 +112,7 @@ gencert:
 			-config=${WORKDIR}/ca-config.json \
 			-profile=client \
 			-cn="crest" \
-			${WORKDIR}/client-csr.json | cfssljson -bare postgresql
+			${WORKDIR}/client-csr.json | cfssljson -bare pg-client
 
-	cp pgsql*.pem ca.pem deployments/postgres/bleh
+	cp *.pem ${CONFIG_TF}
 	mv *.pem *.csr ${CONFIG_PATH}

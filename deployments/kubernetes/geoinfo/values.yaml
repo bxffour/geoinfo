@@ -1,43 +1,54 @@
-app:
-  name: crest-countries
-  environment: development
+geoinfo:
+  name: geoinfo
+  port: 8080
+  # image:
+  #   name: "ghcr.io/bxffour/geoinfo/api"
+  #   tag: "0.9.0-alpha"
+  # configFile: "config.yaml"
+  # credsFile: "secret.toml"
   image:
-    name: "ghcr.io/bxffour/crest/api"
-    tag: "0.0.5"
-    containerPort: "8080"
+    name: sleeper
+    tag: 1.2.0
+  config:
+    env: staging
+    db:
+      max-open-conns: 25
+      max-idle-conns: 25
+      max-idle-time: 35m
+    limiter:
+      rps: 4.3
+      burst: 8
+      enabled: true
   database:
-    # database connection string for the api
-    connectionString: "postgres://crest_api:valkyrie2@{{ .Release.Name }}-postgresql.default.svc.cluster.local:5432/crest_countries?sslmode=disable"
-    # max open connections for database connections
-    maxOpenConns: "25"
-    # max idle connections for database connections
-    maxIdleConns: "25"
-    # max idle time for database connections
-    maxIdleTime: "15m"
-
-# values for the pg-dumo job.
+    credentials:
+      username: "geoinfo"
+      password: "valkyrie2"
+      database: "geoinfo"
+      host: "postgresql.default.svc.cluster.local"
+      port: 5432
+    tls:
+      enable: true
+      sslkey: "tls.key"
+      sslcert: "tls.crt"
+      sslrootcert: "ca.pem"
+      sslmode: "require"
+      
 batch:
   name: "pgdata-dump"
   image:
     name: "ghcr.io/bxffour/crest/bootstrap"
     tag: "1.1.3"
-  connectionString: "postgres://postgres:valkyrie1@{{ .Release.Name }}-postgresql.default.svc.cluster.local:5432/crest_countries?sslmode=disable"
-  passwords:
-    # password to set when creating he crest_admin user
-    adminPassword: "valkyrie1"
+  database:
+    user: postgres
+    password: valkyrie1
+    hostname: postgresql.default.svc.cluster.local
+    port: 5432
+    database: geoinfo
+    tlsenabled: true
+    sslkey: tls.key
+    sslcert: tls.crt
+    sslrootcert: ca.pem
+    sslmode: "prefer"
+  password:
     # password to set when creating the crest_api user
     apiPassword: "valkyrie2"
-
-# values for the bitnami/postgresql helm package
-postgresql:
-  auth:
-    postgresPassword: "valkyrie1"
-    database: "crest_countries"
-
-  primary:
-    persistence:
-      existingClaim: "postgres-pvc"
-
-  image:
-    tag: 15.2.0-debian-11-r5
-

@@ -1,0 +1,12 @@
+port = {{ .Values.app.image.containerPort }}
+env = "{{ .Values.app.environment }}"
+
+[db]
+max-open-conns = {{ .Values.app.database.maxOpenConns }}
+max-idle-conns = {{ .Values.app.database.maxIdleConns }}
+max-idle-time = "{{ .Values.app.database.maxIdleTime}}"
+
+[limiter]
+rps = {{ .Values.app.database.rps }}
+burst = {{ .Values.app.database.burst}}
+ennabled = {{ .Values.app.database.enableRateLimiter }}

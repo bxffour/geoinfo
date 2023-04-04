@@ -1,8 +1,9 @@
 {
-  "CN": "127.0.0.1",
+  "CN": "postgresql.default.svc.cluster.local",
   "hosts": [
     "localhost",
-    "127.0.0.1"
+    "127.0.0.1",
+    "postgresql.default.svc.cluster.local"
   ],
   "key": {
     "algo": "ecdsa",
