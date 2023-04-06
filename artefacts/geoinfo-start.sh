@@ -10,7 +10,7 @@ fi
 declare -A arg_map=(
   ["CONFIG_FILE"]="--config"
   ["SECRET_FILE"]="--secret"
-  ["GEOINFO_PORT"]="--port"
+  ["GEOINFO_API_PORT"]="--port"
   ["GEOINFO_ENV"]="--env"
   ["GEOINFO_DB_USER"]="--db.user"
   ["GEOINFO_DB_PASSWORD"]="--db.password"

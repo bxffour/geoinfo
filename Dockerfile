@@ -31,7 +31,7 @@ COPY --from=build-env /go/bin/geoinfo-api /usr/local/bin/
 COPY ./artefacts/geoinfo-start.sh /bin/gstart
 RUN chmod +x /bin/gstart
 
-ENV CREST_PORT=8080
+ENV GEOINFO_API_PORT=8080
 
 USER ${SERVICE_USER}
 
@@ -50,6 +50,6 @@ LABEL org.opencontainers.image.title="geoinfo" \
       org.opencontainers.image.created="$(IMAGE_CREATED)" \
       org.opencontainers.image.revision="$(IMAGE_REVISION)"
 
-EXPOSE ${CREST_PORT}
+EXPOSE ${GEOINFO_API_PORT}
 
 CMD [ "gstart", "geoinfo-api"]

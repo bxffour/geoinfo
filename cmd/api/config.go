@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-
 	flag "github.com/spf13/pflag"
 	"github.com/spf13/viper"
 )
@@ -105,8 +103,6 @@ func setupConfig(c *config) error {
 	c.db.sslcert = viper.GetString("db.sslcert")
 	c.db.sslkey = viper.GetString("db.sslkey")
 	c.db.sslmode = viper.GetString("db.sslmode")
-
-	fmt.Printf("%s\n", c.db.maxIdleTime)
 
 	return nil
 }
