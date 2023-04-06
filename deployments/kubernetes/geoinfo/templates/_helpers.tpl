@@ -18,7 +18,8 @@
 
 {{- define "postgresDsn2" -}}
     {{- $db := .Values.batch.database -}}
-    {{- $dsn := printf "postgres://%s:%s@%s:%v/%s" $db.user $db.password $db.hostname $db.port $db.database -}}
+	{{- $pg := .Values.geoinfo.database.credentials -}}
+    {{- $dsn := printf "postgres://%s:%s@%s:%v/%s" $db.user $db.password $pg.host $pg.port $pg.dbname -}}
     {{- if $db.tls.enabled -}}
         {{- range $key, $val := $db.tls -}}
             {{- if and (ne "enabled" $key) (ne "sslmode" $key) -}}

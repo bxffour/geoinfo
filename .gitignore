@@ -21,6 +21,9 @@ test/
 config.sh
 secrets.sh
 .ignore
+config.toml
+config.yaml
+secret.toml
 
 # Test binary, built with `go test -c`
 *.test
