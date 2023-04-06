@@ -21,19 +21,19 @@ spec:
       labels: {{ include "common.labels.standard" . | nindent 8 }}
     spec:
       initContainers:
-        # - name : geoinfo-create
-        #   image: "{{ .Values.batch.image.name }}:{{ .Values.batch.image.tag}}"
-        #   env:
-        #   - name: POSTGRES_DB_DSN
-        #     valueFrom:
-        #       secretKeyRef:
-        #         name: geoinfo-init-secrets
-        #         key: postgres-dsn
-        #   - name: GEOINFO_API_PASSWORD
-        #     valueFrom:
-        #       secretKeyRef:
-        #         name: geoinfo-init-secrets
-        #         key: geoinfo-api-password
+        - name : geoinfo-create
+          image: "{{ .Values.batch.image.name }}:{{ .Values.batch.image.tag}}"
+          env:
+          - name: POSTGRES_DB_DSN
+            valueFrom:
+              secretKeyRef:
+                name: geoinfo-init-secrets
+                key: postgres-dsn
+          - name: GEOINFO_API_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: geoinfo-init-secrets
+                key: geoinfo-api-password
         - name: copy-config
           image: busybox:1.36.0-glibc
           volumeMounts:
@@ -61,9 +61,11 @@ spec:
           mountPath: "/etc/geoinfo"
         env:
           - name: CONFIG_FILE
-            value: {{ include "geoinfo.ConfigFile" . }}
+            value: {{ include "geoinfo.ConfigFile" (dict "file" .Values.geoinfo.configFile) }}
           - name: SECRET_FILE
-            value: {{ include "geoinfo.CredsFile" . }}
+            value: {{ include "geoinfo.ConfigFile" (dict "file" .Values.geoinfo.credsFile) }}
+          - name: GEOINFO_PORT
+            value: {{ .Values.geoinfo.port | quote}}
       volumes:
         - name: geoinfo-data-dir
           emptyDir: {}

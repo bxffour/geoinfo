@@ -29,7 +29,6 @@ RUN addgroup -g ${SERVICE_GID} ${SERVICE_GROUP} && \
 
 COPY --from=build-env /go/bin/geoinfo-api /usr/local/bin/
 COPY ./artefacts/geoinfo-start.sh /bin/gstart
-COPY ./artefacts/wait-for-sh /bin/wait-for-sh 
 RUN chmod +x /bin/gstart
 
 ENV CREST_PORT=8080
@@ -42,8 +41,8 @@ ARG IMAGE_CREATED
 
 LABEL org.opencontainers.image.title="geoinfo" \
       org.opencontainers.image.description="A REST API for getting information about countries" \
-      org.opencontainers.image.url="https://ghcr.io/bxffour/crest/api" \
-      org.opencontainers.image.source="https://github.com/bxffour/crest-countries" \
+      org.opencontainers.image.url="https://ghcr.io/bxffour/geoinfo/api" \
+      org.opencontainers.image.source="https://github.com/bxffour/geoinfo" \
       org.opencontainers.image.vendor="thi-startup" \
       org.opencontainers.image.version="$(IMAGE_VERSION)" \
       org.opencontainers.image.licenses="GPLv3" \

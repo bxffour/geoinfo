@@ -1,14 +1,11 @@
 geoinfo:
   name: geoinfo
   port: 8080
-  # image:
-  #   name: "ghcr.io/bxffour/geoinfo/api"
-  #   tag: "0.9.0-alpha"
-  # configFile: "config.yaml"
-  # credsFile: "secret.toml"
   image:
-    name: sleeper
-    tag: 1.2.0
+    name: "ghcr.io/bxffour/geoinfo/api"
+    tag: "0.9.0-alpha"
+  configFile: "config.yaml"
+  credsFile: "secret.toml"
   config:
     env: staging
     db:
@@ -21,13 +18,13 @@ geoinfo:
       enabled: true
   database:
     credentials:
-      username: "geoinfo"
-      password: "valkyrie2"
-      database: "geoinfo"
+      user: "geoinfo"
+      password: "valkyrie1"
+      dbname: "geoinfo"
       host: "postgresql.default.svc.cluster.local"
       port: 5432
     tls:
-      enable: true
+      enable: false
       sslkey: "tls.key"
       sslcert: "tls.crt"
       sslrootcert: "ca.pem"
@@ -36,19 +33,20 @@ geoinfo:
 batch:
   name: "pgdata-dump"
   image:
-    name: "ghcr.io/bxffour/crest/bootstrap"
-    tag: "1.1.3"
+    name: "ghcr.io/bxffour/geoinfo/bootstrap"
+    tag: "0.9.1"
   database:
     user: postgres
-    password: valkyrie1
+    password: valkyrie2
     hostname: postgresql.default.svc.cluster.local
     port: 5432
     database: geoinfo
-    tlsenabled: true
-    sslkey: tls.key
-    sslcert: tls.crt
-    sslrootcert: ca.pem
-    sslmode: "prefer"
+    tls:
+      enabled: false
+      sslmode: prefer
+      sslkey: tls.key
+      sslcert: tls.crt
+      sslrootcert: ca.pem
   password:
     # password to set when creating the crest_api user
-    apiPassword: "valkyrie2"
+    apiPassword: "valkyrie1"
