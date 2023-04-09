@@ -1,49 +1,34 @@
 {{- define "postgresDsn" -}}
 	{{- $db := .Values.batch.database -}}
-	{{- $dsn := printf "host=%s port=%v user=%s password=%s dbname=%s" $db.hostname $db.port $db.user $db.password $db.database -}}
-	{{- if $db.tls.enabled -}}
-		{{- range $key, $val := $db.tls -}}
-			{{- if ne "enabled" $key -}}
-				{{- if ne "sslmode" $key -}}
-					{{- $val = (include "geoinfo.CertFile" (dict "file" $val)) -}}
+	{{- $tls := .Values.geoinfo.database.tls -}}
+	{{- $pg := .Values.geoinfo.database.credentials -}}
+	{{- $dsn := printf "postgres://%s:%s@%s:%v/%s" $db.user $db.password $pg.host $pg.port $pg.dbname -}}
+	{{- if $tls.enable -}}
+		{{- $params := ""}}
+		{{- range $key, $val := $tls -}}
+			{{- if and (contains "ssl" $key) (ne "sslmode" $key) -}}
+				{{- if not (and (eq "require" $tls.sslmode) (eq "sslrootcert" $key)) -}}
+					{{- $mountPath := default "/etc/certs/" .mount -}}
+					{{- $val = (include "geoinfo.CertFile" (dict "file" $val "path" $mountPath)) -}}
+					{{- if eq "" $params -}}
+						{{- $params = printf "?%s=%s" $key $val -}}
+					{{- else -}}
+						{{- $params = printf "%s&%s=%s" $params $key $val -}}
+					{{- end -}}
 				{{- end -}}
-				{{- $dsn = printf "%s %s=%s" $dsn $key $val -}}
 			{{- end -}}
 		{{- end -}}
+		{{- $dsn = printf "%s%s" $dsn $params -}}
+		{{- if $tls.sslmode -}}
+			{{- $dsn = printf "%s&sslmode=%s" $dsn $tls.sslmode -}}
+		{{- else -}}
+			{{- $dsn = printf "%s&sslmode=prefer" $dsn -}}
+		{{- end -}}
 	{{- else -}}
-		{{- $dsn = printf "%s sslmode=disable" $dsn -}}
+		{{- $dsn = printf "%s?sslmode=disable" $dsn -}}
 	{{- end -}}
-{{ $dsn }}
-{{ end }}
-
-{{- define "postgresDsn2" -}}
-    {{- $db := .Values.batch.database -}}
-	{{- $pg := .Values.geoinfo.database.credentials -}}
-    {{- $dsn := printf "postgres://%s:%s@%s:%v/%s" $db.user $db.password $pg.host $pg.port $pg.dbname -}}
-    {{- if $db.tls.enabled -}}
-        {{- range $key, $val := $db.tls -}}
-            {{- if and (ne "enabled" $key) (ne "sslmode" $key) -}}
-                {{- $val = (include "geoinfo.CertFile" (dict "file" $val)) -}}
-				{{- $params := "" -}}
-				{{- if eq "" $params -}}
-					{{- $params = printf "?%s=%s" $key $val -}}
-				{{- else -}}
-					{{- $params = printf "%s&%s=$s" $params $key $val -}}
-				{{- end -}}
-                {{- $dsn = printf "%s%s" $dsn $params -}}
-            {{- end -}}
-        {{- end -}}
-        {{- if $db.tls.sslmode -}}
-            {{- $dsn = printf "%s&sslmode=%s" $dsn $db.tls.sslmode -}}
-        {{- else -}}
-            {{- $dsn = printf "%s&sslmode=require" $dsn -}}
-        {{- end -}}
-    {{- else -}}
-        {{- $dsn = printf "%s?sslmode=disable" $dsn -}}
-    {{- end -}}
-    {{- $dsn -}}
+	{{- $dsn -}}
 {{- end -}}
-
 
 {{/*
 renderSecret takes the values from .Values.geoinfo.database object to populate
@@ -59,12 +44,15 @@ the tom file for database secrets
 			{{- $res = printf "%s%-15s = \"%s\"\n" $res $key $val -}}
 		{{- end -}}
 	{{- end -}}
+	{{- $tls := .Values.geoinfo.database.tls -}}
 	{{- if and .Values.geoinfo.database.tls .Values.geoinfo.database.tls.enable -}}
-		{{- range $key, $val := .Values.geoinfo.database.tls -}}
-			{{- if contains "ssl" $key -}}
-				{{- if ne "sslmode" $key -}}
-					{{- $val = (include "geoinfo.CertFile" (dict "file" $val)) -}}
+		{{- range $key, $val := $tls -}}
+			{{- if and (contains "ssl" $key) (ne "sslmode" $key) -}}
+				{{- if not (and (eq "require" $tls.sslmode) (eq "sslrootcert" $key)) -}}
+					{{- $val = (include "geoinfo.CertFile" (dict "file" $val "path" "/etc/geoinfo/certs/")) -}}
+					{{- $res = printf "%s%-15s = \"%s\"\n" $res $key $val -}}
 				{{- end -}}
+			{{- else if eq "sslmode" $key -}}
 				{{- $res = printf "%s%-15s = \"%s\"\n" $res $key $val -}}
 			{{- end -}}
 		{{- end -}}
@@ -75,19 +63,32 @@ the tom file for database secrets
 {{ end }}
 
 {{- define "geoinfo.ConfigFile" -}}
-{{- $file := required "The name of the config file is required" .file -}}
-{{- printf "/etc/geoinfo/%s" $file -}}
+	{{- required "The name of the config file is required" .file | printf "/etc/geoinfo/%s" -}}
 {{- end -}}
 
 {{- define "geoinfo.CertFile" -}}
-{{- $file := required "The name of the certificate file is required" .file -}}
-{{- printf "/etc/geoinfo/creds/%s" $file -}}
+	{{- $file := required "The name of the certificate file is required" .file  -}}
+	{{- $path := required "The mount path for the certificates is required" .path | clean -}}
+	{{- printf "%s/%s" $path $file}}
 {{- end -}}
 
-{{- define "autoGen" -}}
-	{{- $ca := genCA "geoinfo" 365 -}}
-	{{- $client := genSelfSignedCert "client" (list) (list) 365 -}}
-	{{- $cn := .Values.geoinfo.database.credentials.host -}}
-	{{- $server := genSelfSignedCert $cn (list "127.0.0.1") (list $cn) 365 -}}
-	{{- $certs := dict "ca" $ca "client" $client "server" $server -}}
-{{- end }}
+{{- define "common.image" -}}
+	{{- printf "%s:%s" .name .tag}}
+{{- end -}}
+
+{{- define "geoinfo.api.image" -}}
+	{{- $image := .Values.geoinfo.image -}}
+	{{- include "common.image" (dict "name" $image.name "tag" $image.tag) -}}
+{{- end -}}
+
+{{- define "geoinfo.init.image" -}}
+	{{- $image := .Values.batch.image -}}
+	{{- include "common.image" (dict "name" $image.name "tag" $image.tag) -}}
+{{- end -}}
+
+{{- define "geoinfo.createCerts" -}}
+{{- $tls := .Values.geoinfo.database.tls -}}
+{{- if and $tls.enable $tls.autoGen -}}
+	{{- true -}}
+{{- end -}}
+{{- end -}}

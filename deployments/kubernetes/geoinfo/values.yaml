@@ -24,7 +24,8 @@ geoinfo:
       host: "postgresql.default.svc.cluster.local"
       port: 5432
     tls:
-      enable: false
+      enable: true
+      autoGen: true
       sslkey: "tls.key"
       sslcert: "tls.crt"
       sslrootcert: "ca.pem"
@@ -38,9 +39,3 @@ batch:
   database:
     user: postgres
     password: valkyrie2
-    tls:
-      enabled: false
-      sslmode: prefer
-      sslkey: tls.key
-      sslcert: tls.crt
-      sslrootcert: ca.pem

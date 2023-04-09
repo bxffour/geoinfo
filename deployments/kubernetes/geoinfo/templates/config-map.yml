@@ -1,9 +1,0 @@
-{{ if .Values.geoinfo.config }}
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: geoinfo-config
-data:
-  config.yaml: |-
-    {{- .Values.geoinfo.config | toYaml | nindent 4 -}}
-{{- end -}}
