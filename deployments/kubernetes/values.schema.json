@@ -1,0 +1,218 @@
+{
+  "$schema": "http://json-schema.org/schema#",
+  "type": "object",
+  "properties": {
+    "geoinfo": {
+      "type": "object",
+      "title": "geoinfo app parameters",
+      "properties": {
+        "name": {
+          "type": "string",
+          "title": "application name"
+        },
+        "environment": {
+          "type": "string",
+          "title": "the environment app runs in",
+          "enum": [
+            "development",
+            "staging",
+            "production"
+          ]
+        },
+        "image": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "title": "Container Image"
+            },
+            "tag": {
+              "type": "string",
+              "title": "Container Image Tag"
+            },
+            "containerPort": {
+              "type": "integer",
+              "title": "Container Port"
+            }
+          },
+          "required": [
+            "name",
+            "tag",
+            "containerPort"
+          ]
+        },
+        "configFile": {
+          "type": "string",
+          "title": "Geoinfo config file",
+          "description": "Path to the toml config for the app parameters"
+        },
+        "secretFile": {
+          "type": "string",
+          "title": "Geoinfo credentials file",
+          "description": "Path to the application database credential file"
+        },
+        "database": {
+          "type": "object",
+          "title": "Parameters for postgresql connection",
+          "properties": {
+            "credentials": {
+              "type": "object",
+              "title": "Postgresql database credentials",
+              "properties": {
+                "username": {
+                  "type": "string",
+                  "title": "Postgresql username"
+                },
+                "password": {
+                  "type": "string",
+                  "title": "Postgresql password"
+                },
+                "database": {
+                  "type": "string",
+                  "title": "Postgresql database"
+                },
+                "host": {
+                  "type": "string",
+                  "title": "Postgresql hostname"
+                },
+                "ssl": {
+                  "type": "object",
+                  "properties": {
+                    "enableSSL": {
+                      "type": "boolean",
+                      "description": "Toggle to activate TLS for postgres"
+                    },
+                    "sslkey": {
+                      "type": "string",
+                      "description": "Path to the Postgresql SSL Key"
+                    },
+                    "sslcert": {
+                      "type": "string",
+                      "description": "Path to the Postgresql SSL Certificate"
+                    },
+                    "sslrootcert": {
+                      "type": "string",
+                      "description": "Path to the Postgresql SSL Root Certificate"
+                    },
+                    "sslmode": {
+                      "type": "string",
+                      "description": "Postgresql SSL mode",
+                      "enum": [
+                        "disable",
+                        "allow",
+                        "prefer",
+                        "require",
+                        "verify-ca",
+                        "verify-full"
+                      ]
+                    }
+                  }
+                }
+              },
+              "required": [
+                "username",
+                "password",
+                "database",
+                "host"
+              ]
+            },
+            "config": {
+              "type": "object",
+              "description": "database connection config parameters",
+              "properties": {
+                "max-open-conns": {
+                  "type": "integer",
+                  "title": "Maximum Open Connections"
+                },
+                "max-idle-conns": {
+                  "type": "integer",
+                  "title": "Maximum Idle Connections"
+                },
+                "max-idle-time": {
+                  "type": "string",
+                  "title": "Maximum Idle Time"
+                }
+              }
+            }
+          },
+          "required": [
+            "credentials"
+          ]
+        },
+        "limiter": {
+          "type": "object",
+          "description": "rate limiter config parameters",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "description": "toggle to enable rate limiter"
+            },
+            "rps": {
+              "type": "integer",
+              "description": "maximum requests per second"
+            },
+            "burst": {
+              "type": "number",
+              "format": "float",
+              "description": "rate limiter burst rate"
+            }
+          }
+        }
+      },
+      "required": [
+        "name",
+        "environment",
+        "image",
+        "database"
+      ]
+    },
+    "batch": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "image": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "tag": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "name",
+            "tag"
+          ]
+        },
+        "connectionString": {
+          "type": "string"
+        },
+        "passwords": {
+          "type": "object",
+          "properties": {
+            "adminPassword": {
+              "type": "string"
+            },
+            "apiPassword": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "apiPassword"
+          ]
+        }
+      },
+      "required": [
+        "name",
+        "image"
+      ]
+    }
+  },
+  "required": [
+    "geoinfo",
+    "batch"
+  ]
+}

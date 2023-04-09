@@ -32,7 +32,21 @@ build/api:
 	@echo 'building cmd/api...'
 	go build -ldflags=${linker_flags} -o ./bin/api ./cmd/api
 	GOOS=linux GOARCH=amd64 go build -ldflags=${linker_flags} -o ./bin/linux_amd64/api ./cmd/api
-	
+
+ver?=0.0.6
+IMAGE_NAME=ghcr.io/bxffour/geoinfo/api
+## build/docker: build the cmd/api dockerfile
+.PHONY: build/docker
+build/docker:
+	docker build \
+		--build-arg IMAGE_VERSION=${ver} \
+		--build-arg IMAGE_REVISION=${git_description} \
+		--build-arg IMAGE_CREATED=${current_time} \
+		--build-arg LINKER_FLAGS=$(linker_flags) \
+		--tag ${IMAGE_NAME}:${ver} \
+		--tag ${IMAGE_NAME}:${ver}-${git_description} \
+		.
+		
 
 #=========================================================================================================#
 # DEVELOPMENT
@@ -40,8 +54,8 @@ build/api:
 
 .PHONY: run/binary
 run/binary:
-	@./bin/api --db-dsn=${CRESTCOUNTRIES_DB_DSN}
-
+	@./bin/api --config=./test/config.yaml --secret=./test/secret.toml 
+	
 ## run/api: run the cmd/api application
 .PHONY: run/api
 launch/api:
@@ -64,3 +78,41 @@ db/migrations/up: confirm
 	@echo 'Running up migrations...'
 	migrate -path ./migrations -database ${CRESTCOUNTRIES_DB_DSN} up
 
+
+#=========================================================================================================#
+# SSL
+#=========================================================================================================#
+
+CONFIG_PATH?=${HOME}/.crest_test
+CONFIG_TF?=deployments/kubernetes/infra/certs
+WORKDIR=deployments/ssl
+
+.PHONY: init
+init:
+	mkdir -p ${CONFIG_PATH}
+
+.PHONY: clean
+clean:
+	rm -rf ${CONFIG_PATH}
+
+gencert:
+	cfssl gencert \
+			-initca ${WORKDIR}/ca-csr.json | cfssljson -bare ca
+
+	cfssl gencert \
+			-ca=ca.pem \
+			-ca-key=ca-key.pem \
+			-config=${WORKDIR}/ca-config.json \
+			-profile=server \
+			${WORKDIR}/server-csr.json | cfssljson -bare pg-server
+
+	cfssl gencert \
+			-ca=ca.pem \
+			-ca-key=ca-key.pem \
+			-config=${WORKDIR}/ca-config.json \
+			-profile=client \
+			-cn="crest" \
+			${WORKDIR}/client-csr.json | cfssljson -bare pg-client
+
+	cp *.pem ${CONFIG_TF}
+	mv *.pem *.csr ${CONFIG_PATH}

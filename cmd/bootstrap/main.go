@@ -24,11 +24,7 @@ func main() {
 	flag.StringVarP(&dsn, "database", "d", "", "database connection string")
 	flag.Parse()
 
-	// if !validateDsn(dsn) {
-	// 	log.Fatal(errors.New("err invalid dsn: valid format -> postgres://username:password@hostname:port/database_name?optional_params"))
-	// }
-
-	db, err := sql.Open("postgres", "passfile=/home/sxntana/.pgpass")
+	db, err := sql.Open("postgres", dsn)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -95,9 +91,3 @@ func insert(item *item, db *sql.DB) error {
 
 	return db.QueryRowContext(ctx, query, item.Country).Scan(&item.ID, &item.Version)
 }
-
-// func validateDsn(dsn string) bool {
-// 	r := regexp.MustCompile(`^postgres:\/\/(\w+):([^@]+)@([\w.-]+):(\d+)\/(\w+)(?:\?(.+))?$`)
-
-// 	return r.MatchString(dsn)
-// }

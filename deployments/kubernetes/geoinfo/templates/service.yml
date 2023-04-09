@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "common.names.fullname" . | printf "%s-lb" }}
+  labels: {{ include "common.labels.standard" . | nindent 6 }}
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 80
+      targetPort: {{ .Values.geoinfo.port }}
+  selector: {{ include "common.labels.matchLabels" . | nindent 4 }}

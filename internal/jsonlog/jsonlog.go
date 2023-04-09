@@ -74,7 +74,7 @@ func (l *Logger) print(level Level, message string, properties map[string]string
 		Properties: properties,
 	}
 
-	if message == "" {
+	if message != "" {
 		aux.Message = message
 	}
 

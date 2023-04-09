@@ -6,7 +6,6 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"errors"
-	"log"
 	"strings"
 	"time"
 )
@@ -288,7 +287,6 @@ func (c CountryModel) GetByCodes(otelCtx context.Context, codes []string) ([]*Co
 		code = strings.ToUpper(code)
 		country, err := c.GetByCode(ctx, code)
 		if err != nil {
-			log.Println(code)
 			return nil, err
 		}
 

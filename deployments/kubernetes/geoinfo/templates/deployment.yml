@@ -1,0 +1,99 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "common.names.fullname" . }}
+  namespace: {{ .Release.Namespace | quote }}
+  labels: {{ include "common.labels.standard" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {{ include "common.labels.matchLabels" . | nindent 6 }}
+  revisionHistoryLimit: 5
+  progressDeadlineSeconds: 300
+  minReadySeconds: 10
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels: {{ include "common.labels.standard" . | nindent 8 }}
+    spec:
+      initContainers:
+        - name : geoinfo-create
+          image: {{ include "geoinfo.init.image" . | quote }}
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              mkdir /etc/certs && cp /tmp/certs/* /etc/certs && chmod 0600 /etc/certs/* && /app/entrypoint.sh
+          volumeMounts:
+            - name: dshm
+              mountPath: /dev/shm
+            - name: certificates
+              mountPath: /tmp/certs
+          env:
+          - name: POSTGRES_DB_DSN
+            valueFrom:
+              secretKeyRef:
+                name: {{ include "common.names.fullname" . | printf "%s-init" }}
+                key: postgres-dsn
+          - name: GEOINFO_API_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: {{ include "common.names.fullname" . | printf "%s-init" }}
+                key: geoinfo-api-password
+          - name: GEOINFO_API_USER
+            valueFrom:
+              secretKeyRef:
+                name: {{ include "common.names.fullname" . | printf "%s-init" }}
+                key: geoinfo-api-user
+        - name: copy-config
+          image: busybox:1.36.0-glibc
+          volumeMounts:
+            - name: dshm
+              mountPath: /dev/shm
+            - name: geoinfo-data-dir
+              mountPath: /etc/geoinfo
+            - name: credentials
+              mountPath: /tmp/creds
+            - name: certificates
+              mountPath: /tmp/certs
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              cp /tmp/creds/* /etc/geoinfo && chown 1001:1001 /etc/geoinfo/* && chmod 0400 /etc/geoinfo/*
+              mkdir /etc/geoinfo/certs && cp /tmp/certs/* /etc/geoinfo/certs && chown 1001:1001 /etc/geoinfo/certs/* && chmod 0600 /etc/geoinfo/certs/*
+      containers:
+      - name: {{ .Values.geoinfo.name }}
+        image: {{ include "geoinfo.api.image" . | quote }}
+        ports:
+          - containerPort: {{ .Values.geoinfo.port }}
+        securityContext:
+          runAsUser: 1001
+          runAsGroup: 1001
+        volumeMounts:
+        - name: geoinfo-data-dir
+          mountPath: "/etc/geoinfo"
+        env:
+          - name: CONFIG_FILE
+            value: {{ include "geoinfo.ConfigFile" (dict "file" .Values.geoinfo.configFile) }}
+          - name: SECRET_FILE
+            value: {{ include "geoinfo.ConfigFile" (dict "file" .Values.geoinfo.credsFile) }}
+          - name: GEOINFO_API_PORT
+            value: {{ .Values.geoinfo.port | quote }}
+      volumes:
+        - name: geoinfo-data-dir
+          emptyDir: {}
+        - name: dshm
+          emptyDir:
+            medium: Memory
+            sizeLimit: 5Mi
+        - name: credentials
+          secret:
+            secretName: {{ include "common.names.fullname" . | printf "%s-config" }}
+        - name: certificates
+          secret:
+            secretName: {{ include "common.names.fullname" . | printf "%s-tls" }}

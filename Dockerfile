@@ -8,19 +8,48 @@ FROM golang:1.20.1-alpine3.17 as build-env
 COPY . /go/src/app
 WORKDIR /go/src/app
 
-RUN go mod tidy
-RUN CGO_ENABLED=0 go build -o /go/bin/crest-app ./cmd/api
+RUN go mod download
+RUN CGO_ENABLED=0 go build -o /go/bin/geoinfo-api ./cmd/api
 
 ##
 ## DEPLOY
 ##
 FROM alpine:3.17.2
-COPY --from=build-env /go/bin/crest-app /usr/local/bin/
 
-ENV CREST_PORT=8080
+RUN apk add --no-cache postgresql-client
+RUN apk add --no-cache bash
 
-EXPOSE ${CREST_PORT}
+ENV SERVICE_USER=geoinfo \
+    SERVICE_UID=1001 \
+    SERVICE_GROUP=geoinfo \
+    SERVICE_GID=1001
 
-CMD crest-app --port=${CREST_PORT} --env=${CREST_ENV} --dsn-path=${CREST_DSN_PATH} \
---db-max-open-conns=${CREST_DB_MAX_OPEN_CONNS} --db-max-idle-conns=${CREST_DB_MAX_OPEN_CONNS} \
---db-dsn=${CREST_DB_DSN} --db-max-idle-time=${CREST_DB_MAX_IDLE_TIME}
+RUN addgroup -g ${SERVICE_GID} ${SERVICE_GROUP} && \
+    adduser -D -H -G ${SERVICE_GROUP} -s /sbin/nologin -u ${SERVICE_UID} ${SERVICE_USER}
+
+COPY --from=build-env /go/bin/geoinfo-api /usr/local/bin/
+COPY ./artefacts/geoinfo-start.sh /bin/gstart
+RUN chmod +x /bin/gstart
+
+ENV GEOINFO_API_PORT=8080
+
+USER ${SERVICE_USER}
+
+ARG IMAGE_VERSION
+ARG IMAGE_REVISION
+ARG IMAGE_CREATED
+
+LABEL org.opencontainers.image.title="geoinfo" \
+      org.opencontainers.image.description="A REST API for getting information about countries" \
+      org.opencontainers.image.url="https://ghcr.io/bxffour/geoinfo/api" \
+      org.opencontainers.image.source="https://github.com/bxffour/geoinfo" \
+      org.opencontainers.image.vendor="thi-startup" \
+      org.opencontainers.image.version="$(IMAGE_VERSION)" \
+      org.opencontainers.image.licenses="GPLv3" \
+      org.opencontainers.image.authors="Nana Kwadwo <agyemangclinton8@gmail.com>" \
+      org.opencontainers.image.created="$(IMAGE_CREATED)" \
+      org.opencontainers.image.revision="$(IMAGE_REVISION)"
+
+EXPOSE ${GEOINFO_API_PORT}
+
+CMD [ "gstart", "geoinfo-api"]

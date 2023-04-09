@@ -2,25 +2,21 @@
 
 set -e
 
+if [ -z "${POSTGRES_DB_DSN}" ] || [ -z "${GEOINFO_API_USER}" ] || [ -z "${GEOINFO_API_PASSWORD}" ]; then
+    echo "the POSTGRES_DB_DSN, GEOINFO_API_USER and GEOINFO_API_PASSWORD envars must be set"
+    exit 15
+fi
+
 migrate -path=/migrations -database=$POSTGRES_DB_DSN up
 
 psql -v ON_ERROR_STOP=1 $POSTGRES_DB_DSN <<-EOSQL
     DO \$\$
     BEGIN
-        IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname= 'crest_admin') THEN
-            CREATE ROLE crest_admin WITH LOGIN PASSWORD '$CREST_ADMIN_PASSWORD';
-            GRANT INSERT ON countries TO crest_admin;
-            GRANT SELECT ON countries TO crest_admin;
-            GRANT ALL ON SEQUENCE public.countries_id_seq TO crest_admin;
+        IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname= '$GEOINFO_API_USER') THEN
+            CREATE ROLE $GEOINFO_API_USER WITH LOGIN PASSWORD '$GEOINFO_API_PASSWORD';
+            GRANT SELECT ON countries TO $GEOINFO_API_USER;
         ELSE
-            RAISE NOTICE 'Role crest_admin already exists, skipping...';
-        END IF;
-
-        IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname= 'crest_api') THEN
-            CREATE ROLE crest_api WITH LOGIN PASSWORD '$CREST_API_PASSWORD';
-            GRANT SELECT ON countries TO crest_api;
-        ELSE
-            RAISE NOTICE 'Role crest_api already exists, skipping...';
+            RAISE NOTICE 'Role $GEOINFO_API_USER already exists, skipping...';
         END IF;
     END 
     \$\$

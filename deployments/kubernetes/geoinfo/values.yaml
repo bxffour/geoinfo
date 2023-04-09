@@ -1,0 +1,41 @@
+geoinfo:
+  name: geoinfo
+  port: 6996
+  image:
+    name: "ghcr.io/bxffour/geoinfo/api"
+    tag: "0.9.1-alpha"
+  configFile: "config.yaml"
+  credsFile: "secret.toml"
+  config:
+    env: staging
+    db:
+      max-open-conns: 25
+      max-idle-conns: 25
+      max-idle-time: 35m
+    limiter:
+      rps: 4.3
+      burst: 8
+      enabled: true
+  database:
+    credentials:
+      user: "geoinfo"
+      password: "valkyrie1"
+      dbname: "geoinfo"
+      host: "postgresql.default.svc.cluster.local"
+      port: 5432
+    tls:
+      enable: true
+      autoGen: true
+      sslkey: "tls.key"
+      sslcert: "tls.crt"
+      sslrootcert: "ca.pem"
+      sslmode: "require"
+      
+batch:
+  name: "pgdata-dump"
+  image:
+    name: "ghcr.io/bxffour/geoinfo/bootstrap"
+    tag: "0.9.2"
+  database:
+    user: postgres
+    password: valkyrie2
