@@ -8,7 +8,7 @@
 		{{- range $key, $val := $tls -}}
 			{{- if and (contains "ssl" $key) (ne "sslmode" $key) -}}
 				{{- if not (and (eq "require" $tls.sslmode) (eq "sslrootcert" $key)) -}}
-					{{- $mountPath := default "/etc/certs/" .mount -}}
+					{{- $mountPath := "/etc/certs/" -}}
 					{{- $val = (include "geoinfo.CertFile" (dict "file" $val "path" $mountPath)) -}}
 					{{- if eq "" $params -}}
 						{{- $params = printf "?%s=%s" $key $val -}}
