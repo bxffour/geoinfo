@@ -36,7 +36,7 @@ var (
 
 type application struct {
 	config config
-	logger *jsonlog.Logger
+  logger *jsonlog.Logger
 	models data.Models
 	wg     sync.WaitGroup
 	tracer trace.Tracer
