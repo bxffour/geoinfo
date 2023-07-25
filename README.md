@@ -1,6 +1,6 @@
 # Geoinfo API
 
-The Geoinfo API is a RESTful API that provides information about countries. It is heavily inspired by the Restcountries API and is written in Golang. The API offers various endpoints to access country data based on different criteria, making it a comprehensive resource for obtaining details about countries around the world.
+The Geoinfo API is a RESTful API that provides information about countries. It is heavily inspired by the [Restcountries API](https://restcountries.com) and is written in Golang. The API offers various endpoints to access country data based on different criteria, making it a comprehensive resource for obtaining details about countries around the world.
 
 ## Helm Chart Installation
 
