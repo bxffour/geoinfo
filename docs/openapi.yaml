@@ -102,6 +102,18 @@ paths:
           example: dollar
           schema:
             type: string
+        - name: page
+          in: query
+          description: page number
+          required: false
+          schema:
+            type: integer
+        - name: page_size
+          in: query
+          description: page number
+          required: false
+          schema:
+            type: integer
       responses:
         '200':
           description: Successful response

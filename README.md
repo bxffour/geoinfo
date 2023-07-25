@@ -157,6 +157,8 @@ Description: Search for countries by currency name or code.
 
 Parameters:
 - `currency` (required): Currency name or code.
+- `page` (optional): Page number for pagination.
+- `page_size` (optional): Number of items per page for pagination.
 
 Example Request:
 ```
