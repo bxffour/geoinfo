@@ -1,0 +1,475 @@
+openapi: 3.0.0
+info:
+  version: 1.0.0
+  title: Geoinfo API
+  description: A rest countries api clone that provides information about countires
+  
+servers:
+  - url: http://localhost:8080/v1/countries
+
+paths:
+  /all:
+    get:
+      description: Return a list of all countries 
+      parameters:
+        - name: page
+          in: query
+          description: page number
+          required: false
+          schema:
+            type: integer
+        - name: page_size
+          in: query
+          description: page number
+          required: false
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Country"
+  /name/{name}:
+    get:
+      description: Return a country based on a given name
+      parameters:
+        - name: name
+          in: path
+          description: Search a country by name
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Country"
+  /code/{code}:
+    get:
+      description: Search by cca2, ccn3, cca3 or cioc country code  
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Country"
+  /codes:
+    get:
+      description: Search for countries that match a comma separated list of codes  
+      parameters:
+        - name: codes
+          in: query
+          description: a comma separated list of country codes
+          required: true
+          example: gha,per,usa
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Country"
+                  
+  /currency/{currency}:
+    get:
+      description: Search by currency name or code
+      parameters:
+        - name: currency
+          in: path
+          description: Currency
+          required: true
+          example: dollar
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Country"
+
+  /demonym/{demonym}:
+    get:
+      description: Search by how a citizen are called
+      parameters:
+        - name: demonym
+          in: path
+          description: Demonym or how citizens are called
+          required: true
+          example: ghanaian
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Country"
+  
+  /lang/{lang}:
+    get:
+      description: Search by the language spoken  
+      parameters:
+        - name: lang
+          in: path
+          description: Language 
+          required: true
+          example: english
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Country"
+                
+  /capital/{capital}:
+    get:
+      description: Search by the capital
+      parameters:
+        - name: capital
+          in: path
+          description: Capital City
+          required: true
+          example: accra
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Country"   
+
+  /region/{region}:
+    get:
+      description: Search by region
+      parameters:
+        - name: region
+          in: path
+          description: Region
+          required: true
+          example: africa
+          schema:
+            type: string
+        - name: page
+          in: query
+          description: page number
+          required: false
+          schema:
+            type: integer
+        - name: page_size
+          in: query
+          description: page number
+          required: false
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Country"
+                  
+  /subregion/{subregion}:
+    get:
+      description: Search by subregion 
+      parameters:
+        - name: subregion
+          in: path
+          description: Subregion
+          required: true
+          example: west africa
+          schema:
+            type: string
+        - name: page
+          in: query
+          description: page number
+          required: false
+          schema:
+            type: integer
+        - name: page_size
+          in: query
+          description: page number
+          required: false
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Country"
+                  
+  /translation/{translation}:
+    get:
+      description: Search by translation of the country name 
+      parameters:
+        - name: translation
+          in: path
+          description: translation of the country name
+          required: true
+          example: alemania
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Country"  
+
+components:
+  schemas:
+    Country:
+      type: object
+      properties:
+        Name:
+          type: object
+          properties:
+            Official:
+              type: string
+            Common:
+              type: string
+            NativeName:
+              type: object
+              additionalProperties:
+                type: object
+                properties:
+                  Official:
+                    type: string
+                  Common:
+                    type: string
+        Tld:
+          type: array
+          items:
+            type: string
+        CCA2:
+          type: string
+        CCN3:
+          type: string
+        CCA3:
+          type: string
+        CIOC:
+          type: string
+        Independent:
+          type: boolean
+        Status:
+          type: string
+        UNMember:
+          type: boolean
+        Currencies:
+          type: object
+          additionalProperties:
+            type: object
+            properties:
+              Name:
+                type: string
+              Symbol:
+                type: string
+        IDD:
+          type: object
+          properties:
+            Root:
+              type: string
+            Suffixes:
+              type: array
+              items:
+                type: string
+        Capital:
+          type: array
+          items:
+            type: string
+        AltSpellings:
+          type: array
+          items:
+            type: string
+        Region:
+          type: string
+        SubRegion:
+          type: string
+        Languages:
+          type: object
+          additionalProperties:
+            type: string
+        Translations:
+          type: object
+          additionalProperties:
+            type: object
+            properties:
+              Official:
+                type: string
+              Common:
+                type: string
+        LatLng:
+          type: array
+          items:
+            type: number
+        LandLocked:
+          type: boolean
+        Borders:
+          type: array
+          items:
+            type: string
+        Area:
+          type: number
+        Demonyms:
+          type: object
+          additionalProperties:
+            type: object
+            properties:
+              Female:
+                type: string
+              Male:
+                type: string
+        Flag:
+          type: string
+        Maps:
+          type: object
+          additionalProperties:
+            type: string
+        Population:
+          type: integer
+        Gini:
+          type: object
+          additionalProperties:
+            type: number
+        Fifa:
+          type: string
+        Car:
+          type: object
+          properties:
+            Signs:
+              type: array
+              items:
+                type: string
+            Side:
+              type: string
+        Timezones:
+          type: array
+          items:
+            type: string
+        Continents:
+          type: array
+          items:
+            type: string
+        Flags:
+          type: object
+          properties:
+            PNG:
+              type: string
+            SVG:
+              type: string
+        CoatOfArms:
+          type: object
+          properties:
+            PNG:
+              type: string
+            SVG:
+              type: string
+        StartOfWeek:
+          type: string
+        CapitalInfo:
+          type: object
+          properties:
+            LatLng:
+              type: array
+              items:
+                type: number
+        PostalCode:
+          type: object
+          properties:
+            Format:
+              type: string
+            Regex:
+              type: string
+      example:
+        Name:
+          Official: "Republic of Ghana"
+          Common: "Ghana"
+          NativeName:
+            eng:
+              Official: "Republic of Ghana"
+              Common: "Ghana"
+        Tld: [".gh"]
+        CCA2: "GH"
+        CCN3: "288"
+        CCA3: "GHA"
+        CIOC: "GHA"
+        Independent: true
+        Status: "officially-assigned"
+        UNMember: true
+        Currencies:
+          GHS:
+            Name: "Ghanaian cedi"
+            Symbol: "₵"
+        IDD:
+          Root: "+2"
+          Suffixes: ["33"]
+        Capital: ["Accra"]
+        AltSpellings: ["GH"]
+        Region: "Africa"
+        SubRegion: "Western Africa"
+        Languages: { eng: "English" }
+        Translations:
+          ara:
+            Official: "جمهورية غانا"
+            Common: "غانا"
+          bre:
+            Official: "Republik Ghana"
+            Common: "Ghana"
+          ces:
+            Official: "Ghanská republika"
+            Common: "Ghana"
+          # ... Add other translations
+        LatLng: [8.0, -2.0]
+        LandLocked: false
+        Borders: ["BFA", "CIV", "TGO"]
+        Area: 238533.0
+        Demonyms:
+          eng:
+            Female: "Ghanaian"
+            Male: "Ghanaian"
