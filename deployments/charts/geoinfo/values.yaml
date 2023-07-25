@@ -19,7 +19,7 @@ geoinfo:
   database:
     credentials:
       user: "geoinfo"
-      password: "valkyrie1"
+      password: "mypassword"
       dbname: "geoinfo"
       host: "postgresql.default.svc.cluster.local"
       port: 5432
